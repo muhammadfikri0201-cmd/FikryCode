@@ -1,0 +1,2281 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NutriAuto Pro SaaS - Platform Multi-Tenant Posyandu & Antropometri Kemenkes</title>
+
+  <!-- CDN Tailwind CSS, FontAwesome, ChartJS & SheetJS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Google Font: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Custom External Stylesheet -->
+  <link rel="stylesheet" href="index.css">
+</head>
+<body class="text-slate-800 antialiased selection:bg-teal-500 selection:text-white">
+
+  <!-- Thumbnail Postingan Blogger (Tersembunyi, memakai aset lokal img.png) -->
+  <div style="display:none;">
+    <img src="img.png" alt="NutriAuto Pro Multi-Tenant SaaS Thumbnail" onerror="this.onerror=null;this.src='img.svg';" />
+    <p>Aplikasi Web SaaS Multi-Tenant Posyandu dan Standar Antropometri Kemenkes RI No. 2 Tahun 2020 dengan Manajemen Klien, Lisensi Stop/Play, dan Multi-Database Terpisah 100%.</p>
+  </div>
+
+  <!-- ==================== WRAPPER UTAMA ==================== -->
+  <div id="appRoot" class="min-h-screen flex flex-col bg-slate-50">
+
+    <!-- TOP HEADER -->
+    <header class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-teal-800 text-white shadow-lg sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner font-black text-xl">
+            <i class="fa-solid fa-cloud-bolt"></i>
+          </div>
+          <div>
+            <h1 class="text-lg font-bold tracking-tight leading-none flex items-center gap-2">
+              NutriAuto Pro <span class="text-xs bg-emerald-400 text-teal-950 font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">SAAS V3.3</span>
+            </h1>
+            <p class="text-xs text-indigo-200 font-medium mt-0.5">Sistem Manajemen Multi-Tenant Antropometri Kemenkes RI No. 2 Tahun 2020</p>
+          </div>
+        </div>
+
+        <!-- Mode Badge & User Info -->
+        <div class="flex items-center space-x-3">
+          <span id="previewBadge" data-preview-only hidden class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-400/20 text-amber-200 border border-amber-400/40">
+            <i class="fa-solid fa-flask mr-1.5 text-amber-300"></i> Mode Preview Aktif
+          </span>
+          <div id="userHeaderBlock" class="hidden items-center gap-3">
+            <div class="text-right hidden sm:block">
+              <div id="headerUserName" class="text-xs font-bold leading-tight">Super Administrator</div>
+              <div class="text-[10px] text-teal-200 uppercase font-semibold flex items-center gap-1 justify-end">
+                <span id="headerUserRole">ADMIN UTAMA</span>
+                <span class="text-white/40">&bull;</span>
+                <span id="headerTenantTag" class="text-emerald-300 font-mono">Tenant: admin</span>
+              </div>
+            </div>
+            <button onclick="handleLogout()" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- BANNER KHUSUS IMPERSONASI (SAAT SUPER ADMIN MEMBUKA DATA TENANT) -->
+    <div id="impersonationBanner" class="hidden bg-amber-500 text-slate-900 px-4 py-2 text-xs font-bold shadow-md items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-user-secret text-base"></i>
+        <span>MODE AUDIT AKTIF: Anda sedang membuka data milik Klien: <strong id="impersonatedTenantName">...</strong> (<span id="impersonatedTenantUser">...</span>). Data terpisah 100%!</span>
+      </div>
+      <button onclick="exitImpersonation()" class="px-2.5 py-1 bg-slate-900 text-white rounded-lg hover:bg-slate-800 text-[11px] font-bold">
+        <i class="fa-solid fa-arrow-left mr-1"></i> Kembali ke Super Admin
+      </button>
+    </div>
+
+    <!-- ==================== TAMPILAN LOGIN ==================== -->
+    <div id="loginView" class="flex-1 flex items-center justify-center px-4 py-12">
+      <div class="w-full max-w-md login-card-shell rounded-3xl p-7">
+        <!-- Banner Gambar Lokal (img.png dengan fallback img.svg / placeholder) -->
+        <div class="login-hero-wrap">
+          <img
+            src="img.png"
+            alt="Banner NutriAuto Pro SaaS"
+            class="login-hero-img"
+            onerror="if(this.dataset.triedSvg){this.onerror=null;this.src='https://placehold.co/800x450/312e81/ffffff?text=NutriAuto+Pro+SaaS';}else{this.dataset.triedSvg='1';this.src='img.svg';}"
+          />
+        </div>
+
+        <div class="text-center mb-6">
+          <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Portal Klien SaaS</h2>
+          <p class="text-sm text-slate-500 mt-1">Silakan masuk menggunakan akun Petugas Gizi / Posyandu Anda</p>
+        </div>
+
+        <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-600 mb-1.5">Username</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                <i class="fa-regular fa-user"></i>
+              </span>
+              <input type="text" id="loginUsername" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition" placeholder="Username (mis: admin / peserta)">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-600 mb-1.5">Password</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                <i class="fa-solid fa-lock"></i>
+              </span>
+              <input type="password" id="loginPassword" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition" placeholder="Password akun...">
+            </div>
+          </div>
+
+          <div id="loginAlert" class="hidden p-3 rounded-xl text-xs font-medium"></div>
+
+          <button type="submit" id="loginBtn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2">
+            <span>Masuk ke Sistem SaaS</span>
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ==================== TAMPILAN DASHBOARD APLIKASI UTAMA ==================== -->
+    <div id="mainAppView" class="hidden flex-1 flex flex-col">
+      <!-- Navigation Tabs -->
+      <nav class="bg-white border-b border-slate-200 sticky top-[61px] z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex space-x-1 sm:space-x-3 overflow-x-auto custom-scroll py-2.5">
+            <button onclick="switchTab('tabClientsManager')" id="nav-tabClientsManager" class="tab-btn hidden px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap bg-indigo-600 text-white shadow-sm">
+              <i class="fa-solid fa-users-viewfinder"></i> Manajemen Klien SaaS
+            </button>
+            <button onclick="switchTab('tabDashboard')" id="nav-tabDashboard" class="tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 whitespace-nowrap text-slate-600 hover:bg-slate-100">
+              <i class="fa-solid fa-chart-pie text-teal-600"></i> Dashboard Analisis
+            </button>
+            <button onclick="switchTab('tabAutoExcel')" id="nav-tabAutoExcel" class="tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 whitespace-nowrap text-slate-600 hover:bg-slate-100">
+              <i class="fa-solid fa-file-excel text-emerald-600"></i> Batch Otomatisasi Excel
+            </button>
+            <button onclick="switchTab('tabCalculator')" id="nav-tabCalculator" class="tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 whitespace-nowrap text-slate-600 hover:bg-slate-100">
+              <i class="fa-solid fa-calculator text-indigo-600"></i> Kalkulator Balita
+            </button>
+            <button onclick="switchTab('tabStandar')" id="nav-tabStandar" class="tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 whitespace-nowrap text-slate-600 hover:bg-slate-100">
+              <i class="fa-solid fa-book-medical text-sky-600"></i> Standar Permenkes
+            </button>
+            <button onclick="switchTab('tabDatabase')" id="nav-tabDatabase" class="tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 whitespace-nowrap text-slate-600 hover:bg-slate-100">
+              <i class="fa-solid fa-database text-purple-600"></i> Database Terisolasi
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Main Content Area -->
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+
+        <!-- ==================== 1. TAB MULTI-TENANT CLIENT SAAS MANAGER ==================== -->
+        <section id="tabClientsManager" class="tab-content space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <!-- Card 1: Total Klien Aktif -->
+            <div class="bg-indigo-900 text-white rounded-2xl p-6 shadow-md flex flex-col justify-between relative overflow-hidden">
+              <div class="relative z-10">
+                <span class="text-xs uppercase tracking-wider font-extrabold text-indigo-200">TOTAL KLIEN AKTIF</span>
+                <div class="text-4xl font-black mt-2" id="cardTotalKlien">0 Klien</div>
+                <p class="text-xs text-indigo-200 mt-2 flex items-center gap-1.5">
+                  <i class="fa-solid fa-circle-check text-emerald-400"></i> Data setiap petugas/klien terpisah 100%
+                </p>
+              </div>
+              <i class="fa-solid fa-network-wired text-8xl text-indigo-800/40 absolute -right-4 -bottom-4 pointer-events-none"></i>
+            </div>
+
+            <!-- Card 2: Total Akumulasi Balita/Siswa Terdaftar -->
+            <div class="nutri-card p-6 shadow-sm flex flex-col justify-between relative overflow-hidden">
+              <div>
+                <span class="text-xs uppercase tracking-wider font-extrabold text-slate-400">AKUMULASI SASARAN TERDATA</span>
+                <div class="text-4xl font-black text-slate-800 mt-2" id="cardTotalBalita">0 Sasaran</div>
+                <p class="text-xs text-emerald-600 mt-2 font-semibold flex items-center gap-1.5">
+                  <i class="fa-solid fa-chart-line"></i> Tersebar di seluruh tenant aktif
+                </p>
+              </div>
+              <i class="fa-solid fa-children text-8xl text-slate-100 absolute -right-4 -bottom-4 pointer-events-none"></i>
+            </div>
+
+            <!-- Card 3: Tombol Tambah Klien Baru -->
+            <div class="nutri-card p-6 shadow-sm flex flex-col justify-between">
+              <div>
+                <span class="text-xs uppercase tracking-wider font-extrabold text-slate-400">TAMBAH KLIEN BARU</span>
+                <p class="text-xs text-slate-500 mt-2">Buat akun ahli gizi / petugas baru dengan hak akses database mandiri tanpa tumpang tindih.</p>
+              </div>
+              <button onclick="openModalTambahKlien()" class="mt-4 w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold rounded-xl text-xs shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-circle-plus"></i> Tambah Klien Baru
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabel Utama: Daftar Klien & Status Langganan -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h3 class="text-base font-extrabold text-slate-800">Daftar Klien & Status Langganan</h3>
+                <p class="text-xs text-slate-500 mt-0.5">Super admin dapat login memantau atau mengosongkan data klien tanpa tumpang tindih</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="refreshClientsData()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-arrows-rotate"></i> Sinkronkan
+                </button>
+                <button onclick="openModalTambahKlien()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                  <i class="fa-solid fa-plus"></i> + Klien Baru
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto custom-scroll">
+              <table class="w-full text-left text-xs" id="tableClientsSaaS">
+                <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-[11px] border-b border-slate-200">
+                  <tr>
+                    <th class="p-3.5 text-center w-12">NO</th>
+                    <th class="p-3.5">NAMA KLIEN / AKUN</th>
+                    <th class="p-3.5">INSTANSI & WILAYAH</th>
+                    <th class="p-3.5 text-center">JUMLAH DATA</th>
+                    <th class="p-3.5">EXPIRED LISENSI</th>
+                    <th class="p-3.5 text-center">STATUS</th>
+                    <th class="p-3.5 text-center">STOP / PLAY</th>
+                    <th class="p-3.5 text-center">TINDAKAN ADMIN</th>
+                  </tr>
+                </thead>
+                <tbody id="clientsTableBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 2. TAB DASHBOARD PERTUMBUHAN ==================== -->
+        <section id="tabDashboard" class="tab-content hidden space-y-6">
+          <div class="bg-gradient-to-r from-teal-50 via-indigo-50 to-white border border-teal-200 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-3.5">
+              <div class="w-11 h-11 rounded-2xl bg-teal-600 text-white flex items-center justify-center text-lg shrink-0 shadow-md">
+                <i class="fa-regular fa-calendar-check"></i>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-teal-900">Tenant Aktif Saat Ini</h4>
+                <p id="dashboardTenantInfo" class="text-xs text-slate-600 mt-0.5">Memuat informasi tenant...</p>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 self-start sm:self-center">
+              <div id="tenantLicenseBadge"></div>
+              <button onclick="refreshDatabaseData(false)" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-arrows-rotate"></i> Sinkronkan
+              </button>
+              <button onclick="openModalKosongkanData()" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-broom"></i> Kosongkan Data
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="nutri-card p-5 shadow-sm flex items-center justify-between">
+              <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Balita Tenant</p>
+                <h3 id="statTotal" class="text-2xl font-black text-slate-800 mt-1">0 Balita</h3>
+                <span id="statSourceLabel" class="text-[11px] text-teal-600 font-semibold">Terkunci pada tenant ini</span>
+              </div>
+              <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-xl">
+                <i class="fa-solid fa-baby"></i>
+              </div>
+            </div>
+
+            <div class="nutri-card p-5 shadow-sm flex items-center justify-between">
+              <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Status BB Normal</p>
+                <h3 id="statBBNormal" class="text-2xl font-black text-emerald-600 mt-1">0 Balita</h3>
+                <span class="text-[11px] text-emerald-700 font-semibold">-2 SD s/d +1 SD</span>
+              </div>
+              <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-xl">
+                <i class="fa-solid fa-heart-circle-check"></i>
+              </div>
+            </div>
+
+            <div class="nutri-card p-5 shadow-sm flex items-center justify-between">
+              <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Deteksi Stunted</p>
+                <h3 id="statStunted" class="text-2xl font-black text-amber-600 mt-1">0 Balita</h3>
+                <span class="text-[11px] text-amber-700 font-semibold">&lt; -2 SD Standar TB</span>
+              </div>
+              <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </div>
+            </div>
+
+            <div class="nutri-card p-5 shadow-sm flex items-center justify-between">
+              <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Gizi Kurang / Buruk</p>
+                <h3 id="statWasted" class="text-2xl font-black text-rose-600 mt-1">0 Balita</h3>
+                <span class="text-[11px] text-rose-700 font-semibold">&lt; -2 SD Standar BB</span>
+              </div>
+              <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center text-xl">
+                <i class="fa-solid fa-kit-medical"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart Section -->
+          <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-chart-column text-teal-600"></i> Distribusi Kategori Pertumbuhan Balita (Tenant Ini)
+            </h3>
+            <div class="h-64">
+              <canvas id="growthChart"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 3. TAB BATCH OTOMATISASI EXCEL ==================== -->
+        <section id="tabAutoExcel" class="tab-content hidden space-y-6">
+          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+            <div class="max-w-4xl">
+              <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-file-excel text-emerald-600"></i> Pengisian Otomatis Excel Posyandu (Format 31 Kolom)
+              </h2>
+              <p class="text-sm text-slate-500 mt-1">
+                Unggah berkas Excel format terbaru (<span class="font-mono text-xs text-slate-700">No, NIK, nama_anak, tgl_lahir, jk, umur_tahun, umur_bulan, ..., BERAT, TINGGI, ..., kelas_ibu_balita, mbg</span>). Seluruh kolom asli dipertahankan utuh saat ekspor dan diikat eksklusif ke <strong>Tenant ID Anda</strong>.
+              </p>
+            </div>
+
+            <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <!-- Upload Dropzone -->
+              <div class="border-2 border-dashed border-slate-300 hover:border-teal-500 rounded-2xl p-6 text-center bg-slate-50/50 transition cursor-pointer relative flex flex-col justify-center items-center">
+                <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleExcelUpload(event)">
+                <div class="space-y-3 pointer-events-none">
+                  <div class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto text-2xl">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                  </div>
+                  <div>
+                    <span class="text-sm font-bold text-slate-700 block">Pilih file Excel atau Seret ke sini</span>
+                    <p class="text-xs text-slate-400 mt-0.5">Format .XLSX dan .XLS (Kolom A–AE)</p>
+                  </div>
+                  <div id="fileInfoLabel" class="text-xs font-semibold text-teal-700 bg-teal-50 py-1.5 px-3 rounded-lg inline-block hidden">
+                    File: <span id="fileNameSpan"></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Kebijakan Pengisian -->
+              <div class="lg:col-span-2 bg-gradient-to-br from-slate-50 to-teal-50/30 p-5 rounded-2xl border border-teal-100 flex flex-col justify-between">
+                <div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                    <label id="cardPolicyKeep" class="relative flex flex-col p-4 rounded-xl border-2 border-teal-500 bg-white cursor-pointer shadow-sm">
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-teal-900 flex items-center gap-1.5">
+                          <i class="fa-solid fa-shield-halved text-emerald-600"></i> Jaga Data Riil Lapangan
+                        </span>
+                        <input type="radio" name="fillPolicyRadio" value="empty_only" checked onchange="updatePolicyVisual(this.value)" class="text-teal-600">
+                      </div>
+                      <p class="text-[11px] text-slate-600">Hanya mengisi sel BERAT/TINGGI yang kosong dengan standar baku. Data riil aman terlindungi.</p>
+                    </label>
+
+                    <label id="cardPolicyOverwrite" class="relative flex flex-col p-4 rounded-xl border border-slate-200 bg-white cursor-pointer shadow-sm">
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                          <i class="fa-solid fa-arrows-rotate text-amber-600"></i> Timpa Semua Baris
+                        </span>
+                        <input type="radio" name="fillPolicyRadio" value="overwrite_all" onchange="updatePolicyVisual(this.value)" class="text-amber-600">
+                      </div>
+                      <p class="text-[11px] text-slate-600">Mengisi seluruh baris balita dengan standar baku untuk keperluan simulasi atau proyeksi target.</p>
+                    </label>
+                  </div>
+
+                  <div class="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200">
+                    <label class="text-xs font-bold text-slate-700 whitespace-nowrap">Acuan Permenkes:</label>
+                    <select id="autoFillMode" class="w-full text-xs font-bold bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-800">
+                      <option value="median">Standar Normal Baku (Median Kemenkes)</option>
+                      <option value="min2sd">Batas Bawah Normal (-2 SD Minimum)</option>
+                      <option value="plus1sd">Batas Atas Normal (+1 SD)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2 mt-4 pt-3 border-t border-slate-200">
+                  <button onclick="processAutoFillExcel()" id="btnProcessExcel" disabled class="flex-1 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white font-bold rounded-xl text-xs transition">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Jalankan Pengisian Otomatis
+                  </button>
+                  <button onclick="downloadProcessedExcel()" id="btnDownloadExcel" disabled class="py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-bold rounded-xl text-xs transition">
+                    <i class="fa-solid fa-file-arrow-down mr-1"></i> Unduh Excel (31 Kolom)
+                  </button>
+                  <button onclick="resetExcelUpload()" id="btnResetExcel" disabled class="py-2.5 px-3.5 bg-rose-50 hover:bg-rose-600 disabled:bg-slate-100 disabled:text-slate-400 text-rose-700 hover:text-white border border-rose-200 disabled:border-slate-200 font-bold rounded-xl text-xs transition">
+                    <i class="fa-solid fa-eraser mr-1"></i> Reset
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Preview Excel Data -->
+            <div class="mt-8">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-600" id="excelRowCountLabel">Pratinjau Data Import</span>
+                <span class="text-[11px] text-slate-400">Kolom lengkap A–AE tetap dipertahankan saat ekspor</span>
+              </div>
+              <div class="overflow-x-auto border border-slate-200 rounded-2xl max-h-96 custom-scroll">
+                <table class="w-full text-left text-xs whitespace-nowrap" id="excelDataTable">
+                  <thead class="bg-slate-100 text-slate-700 font-bold uppercase sticky top-0 z-10">
+                    <tr>
+                      <th class="p-3">No</th>
+                      <th class="p-3">NIK</th>
+                      <th class="p-3">nama_anak</th>
+                      <th class="p-3">tgl_lahir</th>
+                      <th class="p-3">jk</th>
+                      <th class="p-3">Umur (Th/Bl)</th>
+                      <th class="p-3">Total Bln</th>
+                      <th class="p-3">POSY / KEL</th>
+                      <th class="p-3">TANGGALUKUR</th>
+                      <th class="p-3 bg-teal-50 text-teal-800">BERAT (Kg)</th>
+                      <th class="p-3 bg-teal-50 text-teal-800">TINGGI (cm)</th>
+                      <th class="p-3">Status Pengisian</th>
+                    </tr>
+                  </thead>
+                  <tbody id="excelTableBody" class="divide-y divide-slate-100 text-slate-600">
+                    <tr><td colspan="12" class="p-8 text-center text-slate-400">Belum ada file Excel yang diunggah.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 4. TAB KALKULATOR PERORANGAN ==================== -->
+        <section id="tabCalculator" class="tab-content hidden space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+              <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-calculator text-indigo-600"></i> Hitung Antropometri Balita
+              </h3>
+
+              <form id="calcForm" onsubmit="handleSingleCalc(event)" class="space-y-4">
+                <div>
+                  <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Nama Balita</label>
+                  <input type="text" id="calcNama" required placeholder="Contoh: Muhammad Rayhan" class="w-full text-xs rounded-xl border border-slate-300 px-3 py-2.5 focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Jenis Kelamin</label>
+                  <div class="grid grid-cols-2 gap-3">
+                    <label class="flex items-center gap-2 p-2 border rounded-xl cursor-pointer">
+                      <input type="radio" name="calcGender" value="L" checked>
+                      <span class="text-xs font-bold text-slate-700">Laki-laki</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 border rounded-xl cursor-pointer">
+                      <input type="radio" name="calcGender" value="P">
+                      <span class="text-xs font-bold text-slate-700">Perempuan</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Usia (Tahun)</label>
+                    <input type="number" id="calcUmurThn" min="0" max="5" value="1" required class="w-full text-xs rounded-xl border border-slate-300 px-3 py-2.5">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Usia (Bulan)</label>
+                    <input type="number" id="calcUmurBln" min="0" max="11" value="6" required class="w-full text-xs rounded-xl border border-slate-300 px-3 py-2.5">
+                  </div>
+                </div>
+
+                <div class="p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-900 text-xs flex items-center justify-between">
+                  <span>Total Usia Bulan:</span>
+                  <span id="labelTotalBlnCalc" class="font-extrabold text-sm text-indigo-700">18 Bulan</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">BB Riil (Kg)</label>
+                    <input type="number" step="0.1" id="calcBBRiil" placeholder="Opsional" class="w-full text-xs rounded-xl border border-slate-300 px-3 py-2.5">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">TB Riil (cm)</label>
+                    <input type="number" step="0.1" id="calcTBRiil" placeholder="Opsional" class="w-full text-xs rounded-xl border border-slate-300 px-3 py-2.5">
+                  </div>
+                </div>
+
+                <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition">
+                  <i class="fa-solid fa-magnifying-glass mr-1"></i> Hitung Standar Kemenkes
+                </button>
+              </form>
+            </div>
+
+            <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="text-base font-bold text-slate-800">Standar Acuan Baku Permenkes RI</h3>
+                <span id="resBadgeJK" class="text-xs bg-indigo-100 text-indigo-800 font-bold px-3 py-1 rounded-full">Laki-laki (18 Bulan)</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="p-4 rounded-2xl border border-teal-100 bg-teal-50/40">
+                  <div class="text-xs font-bold uppercase text-teal-700 mb-1">Standar Berat Badan (BB/U)</div>
+                  <div class="text-3xl font-black text-teal-900" id="resBBMedian">10.9 <span class="text-sm font-semibold">Kg</span></div>
+                  <div class="mt-2 text-xs text-slate-600 border-t border-teal-200/50 pt-2 flex justify-between">
+                    <span>Rentang Normal:</span> <strong id="resBBRange">8.8 s/d 12.2 Kg</strong>
+                  </div>
+                </div>
+
+                <div class="p-4 rounded-2xl border border-emerald-100 bg-emerald-50/40">
+                  <div class="text-xs font-bold uppercase text-emerald-700 mb-1">Standar Tinggi Badan (TB/U)</div>
+                  <div class="text-3xl font-black text-emerald-900" id="resTBMedian">82.3 <span class="text-sm font-semibold">cm</span></div>
+                  <div class="mt-2 text-xs text-slate-600 border-t border-emerald-200/50 pt-2 flex justify-between">
+                    <span>Batas Stunting:</span> <strong id="resTBRange">&lt; 76.9 cm</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200" id="evalRiilBox">
+                <h4 class="text-xs font-bold uppercase text-slate-700 mb-1">Diagnosis & Rekomendasi</h4>
+                <div id="evalRiilContent" class="text-xs text-slate-600 leading-relaxed">
+                  Masukkan berat dan tinggi badan balita di sebelah kiri untuk melihat status gizi.
+                </div>
+              </div>
+
+              <div class="flex justify-end pt-2">
+                <button onclick="saveSingleToDatabase()" id="btnSaveSingle" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-2">
+                  <i class="fa-solid fa-floppy-disk"></i> Simpan ke Database Tenant
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 5. TAB STANDAR KEMENKES LENGKAP ==================== -->
+        <section id="tabStandar" class="tab-content hidden space-y-6">
+          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-base font-bold text-slate-800">Tabel Standar Baku Antropometri (0 - 60 Bulan)</h3>
+              <select id="filterGenderTable" onchange="renderStandarTable()" class="text-xs font-bold border border-slate-300 rounded-xl px-3 py-2">
+                <option value="L">Laki-laki</option>
+                <option value="P">Perempuan</option>
+              </select>
+            </div>
+            <div class="overflow-x-auto border border-slate-200 rounded-2xl max-h-[500px] custom-scroll">
+              <table class="w-full text-left text-xs" id="tableMasterStandar">
+                <thead class="bg-slate-100 text-slate-700 font-bold uppercase sticky top-0">
+                  <tr>
+                    <th class="p-3">Bulan</th>
+                    <th class="p-3">Usia</th>
+                    <th class="p-3 bg-teal-50 text-teal-800">BB -2 SD</th>
+                    <th class="p-3 bg-teal-100 text-teal-900 font-extrabold">BB Median (Kg)</th>
+                    <th class="p-3 bg-teal-50 text-teal-800">BB +1 SD</th>
+                    <th class="p-3 bg-emerald-50 text-emerald-800">TB -2 SD</th>
+                    <th class="p-3 bg-emerald-100 text-emerald-900 font-extrabold">TB Median (cm)</th>
+                    <th class="p-3 bg-emerald-50 text-emerald-800">TB +3 SD</th>
+                  </tr>
+                </thead>
+                <tbody id="standarTableBody" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 6. TAB DATABASE TERISOLASI ==================== -->
+        <section id="tabDatabase" class="tab-content hidden space-y-6">
+          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+              <div>
+                <h3 class="text-lg font-bold text-slate-800">Database Penimbangan Terisolasi</h3>
+                <p class="text-xs text-slate-500">
+                  Menampilkan data yang diikat secara eksklusif untuk Tenant ID: <strong id="lblCurrentTenant" class="text-indigo-600 font-mono">...</strong>
+                </p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button onclick="refreshDatabaseData(false)" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-arrows-rotate"></i> Sinkronkan
+                </button>
+                <button onclick="exportCurrentDatabase()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-file-excel"></i> Ekspor Excel (Format 31 Kolom)
+                </button>
+                <button onclick="openModalKosongkanData()" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 font-bold rounded-xl text-xs transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-broom"></i> Kosongkan Data
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto border border-slate-200 rounded-2xl custom-scroll">
+              <table class="w-full text-left text-xs whitespace-nowrap" id="dbDataTable">
+                <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
+                  <tr>
+                    <th class="p-3">ID</th>
+                    <th class="p-3">Tenant ID</th>
+                    <th class="p-3">NIK</th>
+                    <th class="p-3">Nama Balita</th>
+                    <th class="p-3">JK</th>
+                    <th class="p-3">Umur</th>
+                    <th class="p-3">POSY / KEL</th>
+                    <th class="p-3">BERAT</th>
+                    <th class="p-3">TINGGI</th>
+                    <th class="p-3">Status BB</th>
+                    <th class="p-3">Status TB</th>
+                    <th class="p-3">Petugas</th>
+                    <th class="p-3 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="dbTableBody" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- ==================== MODAL KONFIRMASI KOSONGKAN DATA ==================== -->
+    <div id="modalKosongkanData" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="nutri-modal-panel bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 border border-slate-100">
+        <div class="flex items-start gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-lg shrink-0">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-slate-800">Konfirmasi Kosongkan Data</h3>
+            <p class="text-xs text-slate-500 mt-1" id="clearModalDesc">Data balita akan dihapus dari tampilan aplikasi dan Google Sheets.</p>
+          </div>
+        </div>
+
+        <div class="mt-4 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 space-y-1">
+          <div class="flex justify-between">
+            <span class="font-semibold">Cakupan Target:</span>
+            <strong id="clearModalTarget" class="font-mono">-</strong>
+          </div>
+          <div class="flex justify-between">
+            <span class="font-semibold">Jumlah Data Dihapus:</span>
+            <strong id="clearModalCount">0 Balita</strong>
+          </div>
+        </div>
+
+        <p class="text-[11px] text-slate-500 mt-3 leading-relaxed">
+          Tindakan ini tidak menghapus akun pengguna maupun data milik tenant lain. Pastikan Anda sudah mengekspor cadangan Excel jika data masih diperlukan.
+        </p>
+
+        <div class="mt-5 flex gap-2">
+          <button type="button" onclick="closeModalKosongkanData()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
+            Batal
+          </button>
+          <button type="button" id="btnConfirmClearData" onclick="executeClearData()" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-md shadow-rose-600/20 transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-broom"></i> Ya, Kosongkan Data
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL KONFIRMASI UMUM ==================== -->
+    <div id="modalGenericConfirm" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="nutri-modal-panel bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 border border-slate-100">
+        <h3 id="genericConfirmTitle" class="text-base font-extrabold text-slate-800">Konfirmasi</h3>
+        <p id="genericConfirmMsg" class="text-xs text-slate-600 mt-2 leading-relaxed"></p>
+        <div class="mt-5 flex gap-2">
+          <button type="button" onclick="closeConfirmDialog()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
+            Batal
+          </button>
+          <button type="button" onclick="proceedConfirmDialog()" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-sm transition">
+            Ya, Lanjutkan
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL TAMBAH KLIEN BARU ==================== -->
+    <div id="modalTambahKlien" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="nutri-modal-panel bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 border border-slate-100">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+              <i class="fa-solid fa-user-plus"></i>
+            </div>
+            <h3 class="text-sm font-bold text-slate-800">Tambah Akun Klien SaaS Baru</h3>
+          </div>
+          <button onclick="closeModalTambahKlien()" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+        </div>
+
+        <form onsubmit="handleModalCreateUser(event)" class="mt-4 space-y-3">
+          <div>
+            <label class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Nama Lengkap & Gelar</label>
+            <input type="text" id="mNama" required placeholder="Contoh: MUHAMMAD FIKRI, S.Gz" class="w-full text-xs rounded-xl border border-slate-300 px-3 py-2.5">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Username (Tenant ID)</label>
+              <input type="text" id="mUsername" required placeholder="Contoh: gizi1" class="w-full text-xs rounded-xl border border-slate-300 px-3 py-2.5">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Password</label>
+              <input type="text" id="mPassword" required value="gizi123" class="w-full text-xs rounded-xl border border-slate-300 px-3 py-2.5">
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Instansi / Wilayah Kerja</label>
+            <input type="text" id="mInstansi" required placeholder="Contoh: Posyandu Melati (Desa Sukamaju)" class="w-full text-xs rounded-xl border border-slate-300 px-3 py-2.5">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">Pilih Masa Aktif Lisensi Awal:</label>
+            <div class="grid grid-cols-4 gap-2">
+              <button type="button" onclick="setModalPresetExpiry(30)" class="py-2 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-xs font-bold rounded-xl transition">1 Bulan</button>
+              <button type="button" onclick="setModalPresetExpiry(90)" class="py-2 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-xs font-bold rounded-xl transition">3 Bulan</button>
+              <button type="button" onclick="setModalPresetExpiry(180)" class="py-2 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-xs font-bold rounded-xl transition">6 Bulan</button>
+              <button type="button" onclick="setModalPresetExpiry(365)" class="py-2 bg-emerald-600 text-white border border-emerald-600 text-xs font-bold rounded-xl transition">1 Tahun</button>
+            </div>
+            <input type="date" id="mExpiryDate" required class="w-full text-xs rounded-xl border border-slate-300 px-3 py-2 mt-2 font-mono">
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex gap-2">
+            <button type="button" onclick="closeModalTambahKlien()" class="flex-1 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs">Batal</button>
+            <button type="submit" class="flex-1 py-2.5 bg-emerald-600 text-white font-bold rounded-xl text-xs shadow-md">Simpan Klien</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL PERPANJANG LISENSI CEPAT ==================== -->
+    <div id="modalPerpanjang" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="nutri-modal-panel bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 border border-slate-100">
+        <h3 class="text-sm font-bold text-slate-800 mb-1">Perpanjang Lisensi Klien</h3>
+        <p class="text-xs text-slate-500 mb-4" id="lblTargetPerpanjang">Memperbarui akun...</p>
+
+        <div class="space-y-2">
+          <button onclick="applyRenewalDays(30)" class="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs flex justify-between px-4 transition">
+            <span>Aktivasi 1 Bulan</span> <span class="font-mono">+30 Hari</span>
+          </button>
+          <button onclick="applyRenewalDays(90)" class="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs flex justify-between px-4 transition">
+            <span>Aktivasi 3 Bulan</span> <span class="font-mono">+90 Hari</span>
+          </button>
+          <button onclick="applyRenewalDays(180)" class="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs flex justify-between px-4 transition">
+            <span>Aktivasi 6 Bulan</span> <span class="font-mono">+180 Hari</span>
+          </button>
+          <button onclick="applyRenewalDays(365)" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex justify-between px-4 transition shadow-sm">
+            <span>Aktivasi 1 Tahun</span> <span class="font-mono">+365 Hari</span>
+          </button>
+        </div>
+
+        <button onclick="closeModalPerpanjang()" class="mt-4 w-full py-2 bg-slate-100 text-slate-600 font-bold rounded-xl text-xs">Tutup</button>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="nutri-app-footer bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <span>&copy; 2026 <strong>NutriAuto Pro SaaS</strong> - Multi-Tenant Platform Ahli Gizi</span>
+        <span class="text-slate-400">Standar Permenkes RI No. 2 Tahun 2020</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Wadah Notifikasi Toast -->
+  <div id="appToastContainer"></div>
+
+  <!-- ==================== KONFIGURASI & LOGIKA SAAS ==================== -->
+  <script>
+    // KONFIGURASI APLIKASI
+    const IS_PREVIEW = false; // Ubah menjadi true hanya untuk uji coba lokal tanpa GAS
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzaHeA4jHRid0M9CewmGtvAtOKMzBmI2YQ0NZXoUunnnWw9-NnvUIvCX8CBfFf6Y2c6/exec";
+
+    // FORMAT HEADER EXCEL RESMI (31 KOLOM: A s/d AE)
+    const EXCEL_HEADERS_FOTO = [
+      "No", "NIK", "nama_anak", "tgl_lahir", "jk", "umur_tahun", "umur_bulan",
+      "nm_ortu", "PKM", "KEL", "POSY", "RT", "RW", "ALAMAT", "TANGGALUKUR",
+      "BERAT", "TINGGI", "LILA", "lingkar_kepala", "Pitting_edema", "CARAUKUR",
+      "vita", "asi_bulan_0", "asi_bulan_1", "asi_bulan_2", "asi_bulan_3",
+      "asi_bulan_4", "asi_bulan_5", "asi_bulan_6", "kelas_ibu_balita", "mbg"
+    ];
+
+    // MASTER STANDAR PERMENKES RI NO. 2 TAHUN 2020 (0 - 60 BULAN)
+    const STANDAR_L = {
+      0:  { bb_med: 3.3, bb_min2: 2.5, bb_plus1: 3.9, tb_med: 49.9, tb_min2: 46.1, tb_plus3: 55.6 },
+      1:  { bb_med: 4.5, bb_min2: 3.4, bb_plus1: 5.1, tb_med: 54.7, tb_min2: 50.8, tb_plus3: 60.6 },
+      2:  { bb_med: 5.6, bb_min2: 4.3, bb_plus1: 6.3, tb_med: 58.4, tb_min2: 54.4, tb_plus3: 64.4 },
+      3:  { bb_med: 6.4, bb_min2: 5.0, bb_plus1: 7.2, tb_med: 61.4, tb_min2: 57.3, tb_plus3: 67.6 },
+      4:  { bb_med: 7.0, bb_min2: 5.6, bb_plus1: 7.8, tb_med: 63.9, tb_min2: 59.7, tb_plus3: 70.1 },
+      5:  { bb_med: 7.5, bb_min2: 6.0, bb_plus1: 8.4, tb_med: 65.9, tb_min2: 61.7, tb_plus3: 72.2 },
+      6:  { bb_med: 7.9, bb_min2: 6.4, bb_plus1: 8.8, tb_med: 67.6, tb_min2: 63.3, tb_plus3: 74.0 },
+      7:  { bb_med: 8.3, bb_min2: 6.7, bb_plus1: 9.2, tb_med: 69.2, tb_min2: 64.8, tb_plus3: 75.7 },
+      8:  { bb_med: 8.6, bb_min2: 6.9, bb_plus1: 9.6, tb_med: 70.6, tb_min2: 66.2, tb_plus3: 77.2 },
+      9:  { bb_med: 8.9, bb_min2: 7.1, bb_plus1: 9.9, tb_med: 72.0, tb_min2: 67.5, tb_plus3: 78.7 },
+      10: { bb_med: 9.2, bb_min2: 7.4, bb_plus1: 10.2, tb_med: 73.3, tb_min2: 68.7, tb_plus3: 80.1 },
+      11: { bb_med: 9.4, bb_min2: 7.6, bb_plus1: 10.5, tb_med: 74.5, tb_min2: 69.9, tb_plus3: 81.5 },
+      12: { bb_med: 9.6, bb_min2: 7.7, bb_plus1: 10.8, tb_med: 75.7, tb_min2: 71.0, tb_plus3: 82.9 },
+      13: { bb_med: 9.9, bb_min2: 7.9, bb_plus1: 11.0, tb_med: 76.9, tb_min2: 72.1, tb_plus3: 84.2 },
+      14: { bb_med: 10.1, bb_min2: 8.1, bb_plus1: 11.3, tb_med: 78.0, tb_min2: 73.1, tb_plus3: 85.5 },
+      15: { bb_med: 10.3, bb_min2: 8.3, bb_plus1: 11.5, tb_med: 79.1, tb_min2: 74.1, tb_plus3: 86.7 },
+      16: { bb_med: 10.5, bb_min2: 8.4, bb_plus1: 11.7, tb_med: 80.2, tb_min2: 75.0, tb_plus3: 88.0 },
+      17: { bb_med: 10.7, bb_min2: 8.6, bb_plus1: 12.0, tb_med: 81.2, tb_min2: 76.0, tb_plus3: 89.2 },
+      18: { bb_med: 10.9, bb_min2: 8.8, bb_plus1: 12.2, tb_med: 82.3, tb_min2: 76.9, tb_plus3: 90.4 },
+      19: { bb_med: 11.1, bb_min2: 8.9, bb_plus1: 12.5, tb_med: 83.2, tb_min2: 77.7, tb_plus3: 91.5 },
+      20: { bb_med: 11.3, bb_min2: 9.1, bb_plus1: 12.7, tb_med: 84.2, tb_min2: 78.6, tb_plus3: 92.6 },
+      21: { bb_med: 11.5, bb_min2: 9.2, bb_plus1: 12.9, tb_med: 85.1, tb_min2: 79.4, tb_plus3: 93.8 },
+      22: { bb_med: 11.8, bb_min2: 9.4, bb_plus1: 13.2, tb_med: 86.0, tb_min2: 80.2, tb_plus3: 94.9 },
+      23: { bb_med: 12.0, bb_min2: 9.5, bb_plus1: 13.4, tb_med: 86.9, tb_min2: 81.0, tb_plus3: 95.9 },
+      24: { bb_med: 12.2, bb_min2: 9.7, bb_plus1: 13.6, tb_med: 87.1, tb_min2: 81.0, tb_plus3: 96.3 },
+      25: { bb_med: 12.4, bb_min2: 9.8, bb_plus1: 13.9, tb_med: 88.0, tb_min2: 81.7, tb_plus3: 97.3 },
+      26: { bb_med: 12.5, bb_min2: 10.0, bb_plus1: 14.1, tb_med: 88.8, tb_min2: 82.5, tb_plus3: 98.3 },
+      27: { bb_med: 12.7, bb_min2: 10.1, bb_plus1: 14.3, tb_med: 89.6, tb_min2: 83.1, tb_plus3: 99.3 },
+      28: { bb_med: 12.9, bb_min2: 10.2, bb_plus1: 14.5, tb_med: 90.4, tb_min2: 83.8, tb_plus3: 100.3 },
+      29: { bb_med: 13.1, bb_min2: 10.4, bb_plus1: 14.8, tb_med: 91.2, tb_min2: 84.5, tb_plus3: 101.2 },
+      30: { bb_med: 13.3, bb_min2: 10.5, bb_plus1: 15.0, tb_med: 91.9, tb_min2: 85.1, tb_plus3: 102.1 },
+      31: { bb_med: 13.5, bb_min2: 10.7, bb_plus1: 15.2, tb_med: 92.7, tb_min2: 85.7, tb_plus3: 103.0 },
+      32: { bb_med: 13.7, bb_min2: 10.8, bb_plus1: 15.4, tb_med: 93.4, tb_min2: 86.4, tb_plus3: 103.9 },
+      33: { bb_med: 13.8, bb_min2: 10.9, bb_plus1: 15.6, tb_med: 94.1, tb_min2: 86.9, tb_plus3: 104.8 },
+      34: { bb_med: 14.0, bb_min2: 11.0, bb_plus1: 15.8, tb_med: 94.8, tb_min2: 87.5, tb_plus3: 105.6 },
+      35: { bb_med: 14.2, bb_min2: 11.2, bb_plus1: 16.0, tb_med: 95.4, tb_min2: 88.1, tb_plus3: 106.4 },
+      36: { bb_med: 14.3, bb_min2: 11.3, bb_plus1: 16.2, tb_med: 96.1, tb_min2: 88.7, tb_plus3: 107.2 },
+      37: { bb_med: 14.5, bb_min2: 11.4, bb_plus1: 16.4, tb_med: 96.7, tb_min2: 89.2, tb_plus3: 108.0 },
+      38: { bb_med: 14.7, bb_min2: 11.5, bb_plus1: 16.6, tb_med: 97.4, tb_min2: 89.8, tb_plus3: 108.8 },
+      39: { bb_med: 14.8, bb_min2: 11.6, bb_plus1: 16.8, tb_med: 98.0, tb_min2: 90.3, tb_plus3: 109.5 },
+      40: { bb_med: 15.0, bb_min2: 11.8, bb_plus1: 17.0, tb_med: 98.6, tb_min2: 90.9, tb_plus3: 110.3 },
+      41: { bb_med: 15.2, bb_min2: 11.9, bb_plus1: 17.2, tb_med: 99.2, tb_min2: 91.4, tb_plus3: 111.0 },
+      42: { bb_med: 15.3, bb_min2: 12.0, bb_plus1: 17.4, tb_med: 99.9, tb_min2: 91.9, tb_plus3: 111.7 },
+      43: { bb_med: 15.5, bb_min2: 12.1, bb_plus1: 17.6, tb_med: 100.4, tb_min2: 92.4, tb_plus3: 112.5 },
+      44: { bb_med: 15.7, bb_min2: 12.2, bb_plus1: 17.8, tb_med: 101.0, tb_min2: 93.0, tb_plus3: 113.2 },
+      45: { bb_med: 15.8, bb_min2: 12.4, bb_plus1: 18.0, tb_med: 101.6, tb_min2: 93.5, tb_plus3: 113.9 },
+      46: { bb_med: 16.0, bb_min2: 12.5, bb_plus1: 18.2, tb_med: 102.2, tb_min2: 94.0, tb_plus3: 114.6 },
+      47: { bb_med: 16.2, bb_min2: 12.6, bb_plus1: 18.4, tb_med: 102.8, tb_min2: 94.4, tb_plus3: 115.2 },
+      48: { bb_med: 16.3, bb_min2: 12.7, bb_plus1: 18.6, tb_med: 103.3, tb_min2: 94.9, tb_plus3: 115.9 },
+      49: { bb_med: 16.5, bb_min2: 12.8, bb_plus1: 18.8, tb_med: 103.9, tb_min2: 95.4, tb_plus3: 116.6 },
+      50: { bb_med: 16.7, bb_min2: 12.9, bb_plus1: 19.0, tb_med: 104.4, tb_min2: 95.9, tb_plus3: 117.3 },
+      51: { bb_med: 16.8, bb_min2: 13.1, bb_plus1: 19.2, tb_med: 105.0, tb_min2: 96.4, tb_plus3: 117.9 },
+      52: { bb_med: 17.0, bb_min2: 13.2, bb_plus1: 19.4, tb_med: 105.6, tb_min2: 96.9, tb_plus3: 118.6 },
+      53: { bb_med: 17.2, bb_min2: 13.3, bb_plus1: 19.6, tb_med: 106.1, tb_min2: 97.4, tb_plus3: 119.2 },
+      54: { bb_med: 17.3, bb_min2: 13.4, bb_plus1: 19.8, tb_med: 106.7, tb_min2: 97.8, tb_plus3: 119.9 },
+      55: { bb_med: 17.5, bb_min2: 13.5, bb_plus1: 20.0, tb_med: 107.2, tb_min2: 98.3, tb_plus3: 120.6 },
+      56: { bb_med: 17.7, bb_min2: 13.6, bb_plus1: 20.2, tb_med: 107.8, tb_min2: 98.8, tb_plus3: 121.2 },
+      57: { bb_med: 17.8, bb_min2: 13.7, bb_plus1: 20.4, tb_med: 108.3, tb_min2: 99.3, tb_plus3: 121.9 },
+      58: { bb_med: 18.0, bb_min2: 13.8, bb_plus1: 20.6, tb_med: 108.9, tb_min2: 99.7, tb_plus3: 122.6 },
+      59: { bb_med: 18.2, bb_min2: 14.0, bb_plus1: 20.8, tb_med: 109.4, tb_min2: 100.2, tb_plus3: 123.2 },
+      60: { bb_med: 18.3, bb_min2: 14.1, bb_plus1: 21.0, tb_med: 110.0, tb_min2: 100.7, tb_plus3: 123.9 }
+    };
+
+    const STANDAR_P = {
+      0:  { bb_med: 3.2, bb_min2: 2.4, bb_plus1: 3.7, tb_med: 49.1, tb_min2: 45.4, tb_plus3: 54.7 },
+      1:  { bb_med: 4.2, bb_min2: 3.2, bb_plus1: 4.8, tb_med: 53.7, tb_min2: 49.8, tb_plus3: 59.5 },
+      2:  { bb_med: 5.1, bb_min2: 3.9, bb_plus1: 5.8, tb_med: 57.1, tb_min2: 53.0, tb_plus3: 63.2 },
+      3:  { bb_med: 5.8, bb_min2: 4.5, bb_plus1: 6.6, tb_med: 59.8, tb_min2: 55.6, tb_plus3: 66.1 },
+      4:  { bb_med: 6.4, bb_min2: 5.0, bb_plus1: 7.3, tb_med: 62.1, tb_min2: 57.8, tb_plus3: 68.6 },
+      5:  { bb_med: 6.9, bb_min2: 5.4, bb_plus1: 7.8, tb_med: 64.0, tb_min2: 59.6, tb_plus3: 70.7 },
+      6:  { bb_med: 7.3, bb_min2: 5.7, bb_plus1: 8.2, tb_med: 65.7, tb_min2: 61.2, tb_plus3: 72.5 },
+      7:  { bb_med: 7.6, bb_min2: 6.0, bb_plus1: 8.6, tb_med: 67.3, tb_min2: 62.7, tb_plus3: 74.2 },
+      8:  { bb_med: 7.9, bb_min2: 6.3, bb_plus1: 9.0, tb_med: 68.7, tb_min2: 64.0, tb_plus3: 75.8 },
+      9:  { bb_med: 8.2, bb_min2: 6.5, bb_plus1: 9.3, tb_med: 70.1, tb_min2: 65.3, tb_plus3: 77.4 },
+      10: { bb_med: 8.5, bb_min2: 6.7, bb_plus1: 9.6, tb_med: 71.5, tb_min2: 66.5, tb_plus3: 78.9 },
+      11: { bb_med: 8.7, bb_min2: 6.9, bb_plus1: 9.9, tb_med: 72.8, tb_min2: 67.7, tb_plus3: 80.3 },
+      12: { bb_med: 8.9, bb_min2: 7.0, bb_plus1: 10.1, tb_med: 74.0, tb_min2: 68.9, tb_plus3: 81.7 },
+      13: { bb_med: 9.2, bb_min2: 7.2, bb_plus1: 10.4, tb_med: 75.2, tb_min2: 70.0, tb_plus3: 83.1 },
+      14: { bb_med: 9.4, bb_min2: 7.4, bb_plus1: 10.6, tb_med: 76.4, tb_min2: 71.0, tb_plus3: 84.4 },
+      15: { bb_med: 9.6, bb_min2: 7.6, bb_plus1: 10.9, tb_med: 77.5, tb_min2: 72.0, tb_plus3: 85.7 },
+      16: { bb_med: 9.8, bb_min2: 7.7, bb_plus1: 11.1, tb_med: 78.6, tb_min2: 73.0, tb_plus3: 87.0 },
+      17: { bb_med: 10.0, bb_min2: 7.9, bb_plus1: 11.4, tb_med: 79.7, tb_min2: 74.0, tb_plus3: 88.2 },
+      18: { bb_med: 10.2, bb_min2: 8.1, bb_plus1: 11.6, tb_med: 80.7, tb_min2: 74.9, tb_plus3: 89.4 },
+      19: { bb_med: 10.4, bb_min2: 8.2, bb_plus1: 11.8, tb_med: 81.7, tb_min2: 75.8, tb_plus3: 90.6 },
+      20: { bb_med: 10.6, bb_min2: 8.4, bb_plus1: 12.1, tb_med: 82.7, tb_min2: 76.7, tb_plus3: 91.7 },
+      21: { bb_med: 10.9, bb_min2: 8.6, bb_plus1: 12.3, tb_med: 83.7, tb_min2: 77.5, tb_plus3: 92.9 },
+      22: { bb_med: 11.1, bb_min2: 8.7, bb_plus1: 12.5, tb_med: 84.6, tb_min2: 78.4, tb_plus3: 94.0 },
+      23: { bb_med: 11.3, bb_min2: 8.9, bb_plus1: 12.8, tb_med: 85.5, tb_min2: 79.2, tb_plus3: 95.0 },
+      24: { bb_med: 11.5, bb_min2: 9.0, bb_plus1: 13.0, tb_med: 85.7, tb_min2: 79.3, tb_plus3: 95.4 },
+      25: { bb_med: 11.7, bb_min2: 9.2, bb_plus1: 13.3, tb_med: 86.6, tb_min2: 80.0, tb_plus3: 96.4 },
+      26: { bb_med: 11.9, bb_min2: 9.4, bb_plus1: 13.5, tb_med: 87.4, tb_min2: 80.8, tb_plus3: 97.4 },
+      27: { bb_med: 12.1, bb_min2: 9.5, bb_plus1: 13.7, tb_med: 88.3, tb_min2: 81.5, tb_plus3: 98.4 },
+      28: { bb_med: 12.3, bb_min2: 9.7, bb_plus1: 14.0, tb_med: 89.1, tb_min2: 82.2, tb_plus3: 99.4 },
+      29: { bb_med: 12.5, bb_min2: 9.8, bb_plus1: 14.2, tb_med: 89.9, tb_min2: 82.9, tb_plus3: 100.3 },
+      30: { bb_med: 12.7, bb_min2: 10.0, bb_plus1: 14.4, tb_med: 90.7, tb_min2: 83.6, tb_plus3: 101.3 },
+      31: { bb_med: 12.9, bb_min2: 10.1, bb_plus1: 14.7, tb_med: 91.4, tb_min2: 84.3, tb_plus3: 102.2 },
+      32: { bb_med: 13.1, bb_min2: 10.3, bb_plus1: 14.9, tb_med: 92.2, tb_min2: 84.9, tb_plus3: 103.1 },
+      33: { bb_med: 13.3, bb_min2: 10.4, bb_plus1: 15.1, tb_med: 92.9, tb_min2: 85.6, tb_plus3: 103.9 },
+      34: { bb_med: 13.5, bb_min2: 10.5, bb_plus1: 15.4, tb_med: 93.6, tb_min2: 86.2, tb_plus3: 104.8 },
+      35: { bb_med: 13.7, bb_min2: 10.7, bb_plus1: 15.6, tb_med: 94.4, tb_min2: 86.8, tb_plus3: 105.6 },
+      36: { bb_med: 13.9, bb_min2: 10.8, bb_plus1: 15.8, tb_med: 95.1, tb_min2: 87.4, tb_plus3: 106.5 },
+      37: { bb_med: 14.0, bb_min2: 10.9, bb_plus1: 16.0, tb_med: 95.7, tb_min2: 88.0, tb_plus3: 107.3 },
+      38: { bb_med: 14.2, bb_min2: 11.1, bb_plus1: 16.3, tb_med: 96.4, tb_min2: 88.6, tb_plus3: 108.1 },
+      39: { bb_med: 14.4, bb_min2: 11.2, bb_plus1: 16.5, tb_med: 97.1, tb_min2: 89.2, tb_plus3: 108.9 },
+      40: { bb_med: 14.6, bb_min2: 11.3, bb_plus1: 16.7, tb_med: 97.7, tb_min2: 89.8, tb_plus3: 109.7 },
+      41: { bb_med: 14.8, bb_min2: 11.5, bb_plus1: 16.9, tb_med: 98.4, tb_min2: 90.4, tb_plus3: 110.5 },
+      42: { bb_med: 15.0, bb_min2: 11.6, bb_plus1: 17.2, tb_med: 99.0, tb_min2: 90.9, tb_plus3: 111.2 },
+      43: { bb_med: 15.2, bb_min2: 11.7, bb_plus1: 17.4, tb_med: 99.7, tb_min2: 91.5, tb_plus3: 112.0 },
+      44: { bb_med: 15.3, bb_min2: 11.8, bb_plus1: 17.6, tb_med: 100.3, tb_min2: 92.0, tb_plus3: 112.7 },
+      45: { bb_med: 15.5, bb_min2: 12.0, bb_plus1: 17.8, tb_med: 100.9, tb_min2: 92.5, tb_plus3: 113.5 },
+      46: { bb_med: 15.7, bb_min2: 12.1, bb_plus1: 18.1, tb_med: 101.5, tb_min2: 93.1, tb_plus3: 114.2 },
+      47: { bb_med: 15.9, bb_min2: 12.2, bb_plus1: 18.3, tb_med: 102.1, tb_min2: 93.6, tb_plus3: 114.9 },
+      48: { bb_med: 16.1, bb_min2: 12.3, bb_plus1: 18.5, tb_med: 102.7, tb_min2: 94.1, tb_plus3: 115.7 },
+      49: { bb_med: 16.3, bb_min2: 12.4, bb_plus1: 18.8, tb_med: 103.3, tb_min2: 94.6, tb_plus3: 116.4 },
+      50: { bb_med: 16.4, bb_min2: 12.6, bb_plus1: 19.0, tb_med: 103.9, tb_min2: 95.1, tb_plus3: 117.1 },
+      51: { bb_med: 16.6, bb_min2: 12.7, bb_plus1: 19.2, tb_med: 104.5, tb_min2: 95.6, tb_plus3: 117.7 },
+      52: { bb_med: 16.8, bb_min2: 12.8, bb_plus1: 19.4, tb_med: 105.0, tb_min2: 96.1, tb_plus3: 118.4 },
+      53: { bb_med: 17.0, bb_min2: 12.9, bb_plus1: 19.7, tb_med: 105.6, tb_min2: 96.6, tb_plus3: 119.1 },
+      54: { bb_med: 17.2, bb_min2: 13.0, bb_plus1: 19.9, tb_med: 106.2, tb_min2: 97.1, tb_plus3: 119.8 },
+      55: { bb_med: 17.3, bb_min2: 13.2, bb_plus1: 20.1, tb_med: 106.7, tb_min2: 97.6, tb_plus3: 120.4 },
+      56: { bb_med: 17.5, bb_min2: 13.3, bb_plus1: 20.3, tb_med: 107.3, tb_min2: 98.1, tb_plus3: 121.1 },
+      57: { bb_med: 17.7, bb_min2: 13.4, bb_plus1: 20.6, tb_med: 107.8, tb_min2: 98.5, tb_plus3: 121.8 },
+      58: { bb_med: 17.9, bb_min2: 13.5, bb_plus1: 20.8, tb_med: 108.4, tb_min2: 99.0, tb_plus3: 122.4 },
+      59: { bb_med: 18.0, bb_min2: 13.6, bb_plus1: 21.0, tb_med: 108.9, tb_min2: 99.5, tb_plus3: 123.1 },
+      60: { bb_med: 18.2, bb_min2: 13.7, bb_plus1: 21.2, tb_med: 109.4, tb_min2: 99.9, tb_plus3: 123.7 }
+    };
+
+    // ==================== NOTIFIKASI TOAST & MODAL KONFIRMASI ====================
+    let pendingConfirmCallback = null;
+
+    function showAppToast(message, type = "info") {
+      const box = document.getElementById("appToastContainer");
+      if (!box) return;
+      const iconMap = {
+        success: "fa-circle-check",
+        error: "fa-circle-exclamation",
+        warning: "fa-triangle-exclamation",
+        info: "fa-circle-info"
+      };
+      const el = document.createElement("div");
+      el.className = `nutri-toast nutri-toast-${type}`;
+      el.innerHTML = `<i class="fa-solid ${iconMap[type] || iconMap.info} mt-0.5 shrink-0"></i><span>${message}</span>`;
+      box.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = "0";
+        el.style.transition = "opacity 0.25s ease";
+        setTimeout(() => el.remove(), 260);
+      }, 3800);
+    }
+
+    function openConfirmDialog(title, message, onConfirm) {
+      pendingConfirmCallback = onConfirm;
+      document.getElementById("genericConfirmTitle").innerText = title;
+      document.getElementById("genericConfirmMsg").innerText = message;
+      document.getElementById("modalGenericConfirm").classList.remove("hidden");
+    }
+
+    function closeConfirmDialog() {
+      document.getElementById("modalGenericConfirm").classList.add("hidden");
+      pendingConfirmCallback = null;
+    }
+
+    function proceedConfirmDialog() {
+      const cb = pendingConfirmCallback;
+      closeConfirmDialog();
+      if (typeof cb === "function") cb();
+    }
+
+    // ==================== STATE UTAMA ====================
+    let currentUser = null;
+    let actualAdminUser = null;
+    let isImpersonating = false;
+    let targetRenewalUsername = null;
+    let pendingClearTarget = null;
+    let processedExcelData = [];
+    let chartInstance = null;
+
+    const DUMMY_CLIENTS = [
+      { id: "USR-001", username: "admin", password: "admin123", nama: "SUPER ADMINISTRATOR", instansi: "Dinas Kesehatan / Pusat Kendali", role: "Admin Utama", expiredDate: "2027-12-31", status: "Aktif" },
+      { id: "USR-002", username: "gizi1", password: "gizi123", nama: "MUHAMMAD FIKRI, S.Gz", instansi: "Posyandu Melati (Desa A)", role: "Ahli Gizi", expiredDate: "2027-08-28", status: "Aktif" },
+      { id: "USR-003", username: "peserta", password: "peserta123", nama: "Petugas Posyandu Tulip", instansi: "Puskesmas Kecamatan", role: "Ahli Gizi", expiredDate: "2027-12-31", status: "Aktif" }
+    ];
+
+    const DUMMY_BALITA_DATA = [
+      { id: "BAL-GIZI1-01", tenantId: "gizi1", no: "1.", nik: "3208114101220003", nama: "YASMIN", tglLahir: "2022-01-01", jk: "P", thn: 4, bln: 10, total_bln: 58, nm_ortu: "MAMAN/IIN", pkm: "CIDAHU", kel: "CIHIDEUNGGIRANG", posy: "MAWAR 2", rt: "1", rw: "2", alamat: "MANIS", tgl_ukur: "2026-11-15", bb: 17.9, tb: 108.4, lila: "", lingkar_kepala: "", pitting_edema: "", cara_ukur: "", vita: "", asi_bulan_0: "", asi_bulan_1: "", asi_bulan_2: "", asi_bulan_3: "", asi_bulan_4: "", asi_bulan_5: "", asi_bulan_6: "", kelas_ibu_balita: "", mbg: "", stat_bb: "Normal", stat_tb: "Normal", petugas: "MUHAMMAD FIKRI, S.Gz" }
+    ];
+
+    function applyPreviewMode() {
+      document.querySelectorAll("[data-preview-only]").forEach(function (el) {
+        if (IS_PREVIEW) { el.hidden = false; } else { el.remove(); }
+      });
+    }
+
+    function isGasReady() {
+      return !IS_PREVIEW && GAS_URL && !GAS_URL.includes("PASTE_URL_DEPLOY_GAS_ANDA_DISINI");
+    }
+
+    // Helper LocalStorage
+    function loadSavedClients() {
+      try {
+        const stored = localStorage.getItem("SAAS_CLIENTS");
+        if (stored) return JSON.parse(stored);
+      } catch (e) {}
+      return IS_PREVIEW ? [...DUMMY_CLIENTS] : [];
+    }
+    function saveClientsStorage(list) {
+      localStorage.setItem("SAAS_CLIENTS", JSON.stringify(list));
+    }
+
+    function loadSavedBalita() {
+      try {
+        const stored = localStorage.getItem("SAAS_BALITA");
+        if (stored) return JSON.parse(stored);
+      } catch (e) {}
+      return IS_PREVIEW ? [...DUMMY_BALITA_DATA] : [];
+    }
+    function saveBalitaStorage(list) {
+      localStorage.setItem("SAAS_BALITA", JSON.stringify(list));
+    }
+
+    let clientsList = loadSavedClients();
+    let allBalitaList = loadSavedBalita();
+
+    // Helper Normalisasi & Evaluasi Status Gizi
+    function normalizeJK(val) {
+      return String(val || "L").trim().toUpperCase().startsWith("P") ? "P" : "L";
+    }
+
+    function parseSafeNumber(val) {
+      if (val === null || val === undefined || val === "") return NaN;
+      return parseFloat(String(val).trim().replace(",", "."));
+    }
+
+    function evaluateStatusBB(bb, tbl) {
+      if (isNaN(bb) || !tbl) return "-";
+      if (bb < tbl.bb_min2) return "Kurang";
+      if (bb > tbl.bb_plus1) return "Risiko Lebih";
+      return "Normal";
+    }
+
+    function evaluateStatusTB(tb, tbl) {
+      if (isNaN(tb) || !tbl) return "-";
+      if (tb < tbl.tb_min2) return "Pendek (Stunted)";
+      if (tb > tbl.tb_plus3) return "Tinggi";
+      return "Normal";
+    }
+
+    function formatExcelDate(val) {
+      if (val === null || val === undefined) return "";
+      if (val instanceof Date && !isNaN(val.getTime())) {
+        const y = val.getFullYear();
+        const m = String(val.getMonth() + 1).padStart(2, "0");
+        const d = String(val.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+      }
+      const rawStr = String(val).trim();
+      if (!rawStr) return "";
+
+      if (/^\d+(\.\d+)?$/.test(rawStr)) {
+        const num = parseFloat(rawStr);
+        if (num > 10000 && num < 80000) {
+          const dt = new Date(Math.round((num - 25569) * 86400 * 1000));
+          if (!isNaN(dt.getTime())) {
+            const y = dt.getUTCFullYear();
+            const m = String(dt.getUTCMonth() + 1).padStart(2, "0");
+            const d = String(dt.getUTCDate()).padStart(2, "0");
+            return `${y}-${m}-${d}`;
+          }
+        }
+      }
+
+      const isoMatch = rawStr.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+      if (isoMatch) {
+        return `${isoMatch[1]}-${isoMatch[2].padStart(2, "0")}-${isoMatch[3].padStart(2, "0")}`;
+      }
+
+      const dmyMatch = rawStr.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+      if (dmyMatch) {
+        return `${dmyMatch[3]}-${dmyMatch[2].padStart(2, "0")}-${dmyMatch[1].padStart(2, "0")}`;
+      }
+
+      return rawStr;
+    }
+
+    function parseDecimalValue(val) {
+      const num = parseSafeNumber(val);
+      return isNaN(num) || num <= 0 ? null : num;
+    }
+
+    function parseNullableInt(val) {
+      if (val === null || val === undefined) return null;
+      const str = String(val).trim();
+      if (!str) return null;
+      const num = parseInt(str, 10);
+      return isNaN(num) ? null : num;
+    }
+
+    function calculateAgeMonths(tglLahirStr, tglUkurStr) {
+      if (!tglLahirStr) return { thn: 0, bln: 0, totalBln: 0 };
+      const birthDate = new Date(tglLahirStr);
+      if (isNaN(birthDate.getTime())) return { thn: 0, bln: 0, totalBln: 0 };
+
+      let refDate = tglUkurStr ? new Date(tglUkurStr) : new Date();
+      if (isNaN(refDate.getTime())) refDate = new Date();
+
+      let months = (refDate.getFullYear() - birthDate.getFullYear()) * 12;
+      months -= birthDate.getMonth();
+      months += refDate.getMonth();
+      if (refDate.getDate() < birthDate.getDate()) months--;
+      const totalBln = Math.max(0, months);
+      return { thn: Math.floor(totalBln / 12), bln: totalBln % 12, totalBln: totalBln };
+    }
+
+    function getRemainingDays(expiryDateStr) {
+      if (!expiryDateStr) return { days: 0, isExpired: true, text: "Tidak ditentukan" };
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const expDate = new Date(expiryDateStr);
+      expDate.setHours(0, 0, 0, 0);
+      const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+      return {
+        days: diffDays,
+        isExpired: diffDays < 0,
+        text: diffDays < 0 ? "Expired" : `${diffDays} hari lagi`
+      };
+    }
+
+    function buildAndDownloadExcel31Cols(dataRows, filename) {
+      const aoa = [EXCEL_HEADERS_FOTO, ...dataRows];
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+      for (let r = 1; r <= dataRows.length; r++) {
+        const nikCellRef = XLSX.utils.encode_cell({ r: r, c: 1 });
+        if (ws[nikCellRef] && ws[nikCellRef].v !== "" && ws[nikCellRef].v !== null && ws[nikCellRef].v !== undefined) {
+          ws[nikCellRef].v = String(ws[nikCellRef].v);
+          ws[nikCellRef].t = "s";
+          ws[nikCellRef].z = "@";
+        }
+      }
+
+      ws["!cols"] = [
+        { wch: 6 }, { wch: 19 }, { wch: 24 }, { wch: 12 }, { wch: 5 },
+        { wch: 12 }, { wch: 12 }, { wch: 22 }, { wch: 14 }, { wch: 18 },
+        { wch: 14 }, { wch: 5 }, { wch: 5 }, { wch: 18 }, { wch: 14 },
+        { wch: 9 }, { wch: 9 }, { wch: 8 }, { wch: 15 }, { wch: 14 },
+        { wch: 12 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+        { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 16 },
+        { wch: 8 }
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Data_Balita");
+      XLSX.writeFile(wb, filename);
+    }
+
+    // Inisialisasi Aplikasi
+    document.addEventListener("DOMContentLoaded", function() {
+      applyPreviewMode();
+      renderStandarTable();
+      renderClientsTable();
+      updateSaaSSummaryCards();
+
+      const inpThn = document.getElementById("calcUmurThn");
+      const inpBln = document.getElementById("calcUmurBln");
+      function updateTotBln() {
+        if (!inpThn || !inpBln) return;
+        const total = (parseInt(inpThn.value, 10) || 0) * 12 + (parseInt(inpBln.value, 10) || 0);
+        document.getElementById("labelTotalBlnCalc").innerText = `${total} Bulan`;
+      }
+      if (inpThn && inpBln) {
+        inpThn.addEventListener("input", updateTotBln);
+        inpBln.addEventListener("input", updateTotBln);
+      }
+    });
+
+    // ==================== SISTEM LOGIN MULTI-TENANT ====================
+    function handleLoginSubmit(e) {
+      e.preventDefault();
+      const u = document.getElementById("loginUsername").value.trim().toLowerCase();
+      const p = document.getElementById("loginPassword").value.trim();
+      const alertBox = document.getElementById("loginAlert");
+      const btn = document.getElementById("loginBtn");
+
+      alertBox.className = "p-3 rounded-xl text-xs font-medium bg-slate-100 text-slate-600 block";
+      alertBox.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Memvalidasi otentikasi...';
+      btn.disabled = true;
+
+      if (!isGasReady()) {
+        clientsList = loadSavedClients();
+        setTimeout(() => {
+          btn.disabled = false;
+          const found = clientsList.find(c => c.username.toLowerCase() === u && String(c.password).trim() === p);
+          if (!found) {
+            alertBox.className = "p-3 rounded-xl text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200 block";
+            alertBox.innerHTML = '<i class="fa-solid fa-circle-exclamation mr-1"></i> Username atau password salah.';
+            return;
+          }
+          if (found.status !== "Aktif") {
+            alertBox.className = "p-3 rounded-xl text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200 block";
+            alertBox.innerHTML = '<i class="fa-solid fa-circle-pause mr-1"></i> <strong>Akun Dihentikan (STOP)</strong>: Lisensi Anda sedang ditangguhkan oleh Super Admin.';
+            return;
+          }
+          const rem = getRemainingDays(found.expiredDate);
+          if (rem.isExpired) {
+            alertBox.className = "p-3 rounded-xl text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200 block";
+            alertBox.innerHTML = `<i class="fa-solid fa-calendar-xmark mr-1"></i> Masa aktif akun berakhir pada ${found.expiredDate}. Silakan hubungi Super Admin.`;
+            return;
+          }
+          grantAccess(found);
+        }, 300);
+      } else {
+        fetch(GAS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ action: "login", username: u, password: p })
+        })
+        .then(r => r.json())
+        .then(res => {
+          btn.disabled = false;
+          if (res.status === "success") {
+            grantAccess(res.user);
+          } else {
+            alertBox.className = "p-3 rounded-xl text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200 block";
+            alertBox.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-1"></i> ${res.message || "Gagal login."}`;
+          }
+        })
+        .catch(() => {
+          btn.disabled = false;
+          alertBox.className = "p-3 rounded-xl text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200 block";
+          alertBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> Koneksi backend GAS bermasalah.';
+        });
+      }
+    }
+
+    function grantAccess(user) {
+      currentUser = user;
+      document.getElementById("loginView").classList.add("hidden");
+      document.getElementById("mainAppView").classList.remove("hidden");
+      document.getElementById("userHeaderBlock").classList.remove("hidden");
+      document.getElementById("userHeaderBlock").classList.add("flex");
+
+      document.getElementById("headerUserName").innerText = user.nama;
+      document.getElementById("headerUserRole").innerText = user.role;
+      document.getElementById("headerTenantTag").innerText = `Tenant: ${user.username}`;
+
+      const navSaaS = document.getElementById("nav-tabClientsManager");
+      if (user.role === "Admin Utama") {
+        if (navSaaS) navSaaS.classList.remove("hidden");
+        switchTab("tabClientsManager");
+        if (isGasReady()) refreshClientsData(true);
+      } else {
+        if (navSaaS) navSaaS.classList.add("hidden");
+        switchTab("tabDashboard");
+      }
+
+      initGrowthChart();
+      updateDashboardData();
+      if (isGasReady()) refreshDatabaseData(true);
+      showAppToast(`Selamat datang, ${user.nama}!`, "success");
+    }
+
+    function handleLogout() {
+      currentUser = null;
+      actualAdminUser = null;
+      isImpersonating = false;
+      document.getElementById("impersonationBanner").classList.add("hidden");
+      document.getElementById("loginForm").reset();
+      document.getElementById("loginAlert").className = "hidden";
+      document.getElementById("mainAppView").classList.add("hidden");
+      document.getElementById("userHeaderBlock").classList.add("hidden");
+      document.getElementById("userHeaderBlock").classList.remove("flex");
+      document.getElementById("loginView").classList.remove("hidden");
+      showAppToast("Anda telah keluar dari sistem.", "info");
+    }
+
+    // ==================== NAVIGASI TAB ====================
+    function switchTab(tabId) {
+      if (tabId === "tabClientsManager" && (!currentUser || currentUser.role !== "Admin Utama")) return;
+
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.add("hidden"));
+      document.querySelectorAll(".tab-btn").forEach(b => {
+        b.className = "tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 whitespace-nowrap text-slate-600 hover:bg-slate-100";
+        if (b.id === "nav-tabClientsManager" && (!currentUser || currentUser.role !== "Admin Utama")) {
+          b.classList.add("hidden");
+        }
+      });
+
+      const activeContent = document.getElementById(tabId);
+      const activeBtn = document.getElementById("nav-" + tabId);
+      if (activeContent) activeContent.classList.remove("hidden");
+      if (activeBtn) {
+        activeBtn.className = tabId === "tabClientsManager"
+          ? "tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap bg-indigo-600 text-white shadow-sm"
+          : "tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap bg-teal-50 text-teal-700 border border-teal-200";
+      }
+
+      if (tabId === "tabClientsManager") {
+        renderClientsTable();
+        updateSaaSSummaryCards();
+      } else if (tabId === "tabDashboard" || tabId === "tabDatabase") {
+        updateDashboardData();
+        renderDatabaseTable();
+      }
+    }
+
+    // ==================== FITUR KOSONGKAN DATA ====================
+    function openModalKosongkanData(specificTenant) {
+      if (!currentUser) return;
+      allBalitaList = loadSavedBalita();
+
+      let targetCode = "";
+      let targetLabel = "";
+      let countToDelete = 0;
+
+      if (specificTenant) {
+        targetCode = String(specificTenant).trim().toLowerCase();
+        targetLabel = `Tenant: ${targetCode}`;
+        countToDelete = allBalitaList.filter(b => String(b.tenantId || "").toLowerCase() === targetCode).length;
+      } else if (currentUser.role === "Admin Utama" && !isImpersonating) {
+        targetCode = "ALL";
+        targetLabel = "SELURUH DATA BALITA (SEMUA TENANT)";
+        countToDelete = allBalitaList.length;
+      } else {
+        targetCode = String(currentUser.username).trim().toLowerCase();
+        targetLabel = `Tenant: ${targetCode}`;
+        countToDelete = allBalitaList.filter(b => String(b.tenantId || "").toLowerCase() === targetCode).length;
+      }
+
+      if (countToDelete === 0) {
+        showAppToast(`Data pada ${targetLabel} sudah kosong (0 Balita).`, "info");
+        return;
+      }
+
+      pendingClearTarget = targetCode;
+      document.getElementById("clearModalTarget").innerText = targetLabel;
+      document.getElementById("clearModalCount").innerText = `${countToDelete} Balita`;
+      document.getElementById("clearModalDesc").innerText = targetCode === "ALL"
+        ? "Seluruh data penimbangan balita dari semua tenant akan dikosongkan."
+        : `Seluruh data penimbangan milik tenant "${targetCode}" akan dikosongkan dari aplikasi dan Google Sheets.`;
+      document.getElementById("modalKosongkanData").classList.remove("hidden");
+    }
+
+    function closeModalKosongkanData() {
+      document.getElementById("modalKosongkanData").classList.add("hidden");
+      pendingClearTarget = null;
+    }
+
+    async function executeClearData() {
+      if (!pendingClearTarget) return;
+      const target = pendingClearTarget;
+      const btn = document.getElementById("btnConfirmClearData");
+      const origHtml = btn.innerHTML;
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengosongkan...';
+
+      let gasNote = "";
+      if (isGasReady()) {
+        try {
+          const resp = await fetch(GAS_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ action: "clearTenantData", tenantId: target })
+          });
+          const res = await resp.json();
+          if (res.status !== "success") {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+            showAppToast(`Gagal mengosongkan data di Google Sheets: ${res.message || "Error tidak diketahui."}`, "error");
+            return;
+          }
+          gasNote = " (Tersinkron ke Google Sheets)";
+        } catch (err) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+          showAppToast("Koneksi ke backend GAS gagal. Pastikan Code.gs terbaru sudah di-deploy.", "error");
+          return;
+        }
+      }
+
+      allBalitaList = loadSavedBalita();
+      allBalitaList = target === "ALL"
+        ? []
+        : allBalitaList.filter(b => String(b.tenantId || "").toLowerCase() !== target);
+      saveBalitaStorage(allBalitaList);
+
+      if (!currentUser || target === "ALL" || target === String(currentUser.username).toLowerCase()) {
+        resetExcelUpload(true);
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+      closeModalKosongkanData();
+
+      updateDashboardData();
+      renderDatabaseTable();
+      renderClientsTable();
+      updateSaaSSummaryCards();
+      showAppToast(`Data berhasil dikosongkan menjadi 0 Balita${gasNote}.`, "success");
+    }
+
+    function deleteSingleBalita(id) {
+      if (!id) return;
+      openConfirmDialog("Hapus Data Balita", `Hapus 1 data balita dengan ID "${id}"?`, async () => {
+        if (isGasReady()) {
+          try {
+            const resp = await fetch(GAS_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({ action: "deleteBalita", id: id })
+            });
+            const res = await resp.json();
+            if (res.status !== "success") {
+              showAppToast(`Gagal menghapus di Google Sheets: ${res.message || "ID tidak ditemukan."}`, "error");
+              return;
+            }
+          } catch (err) {
+            showAppToast("Gagal menghubungi backend GAS saat menghapus data.", "error");
+            return;
+          }
+        }
+
+        allBalitaList = loadSavedBalita().filter(b => String(b.id) !== String(id));
+        saveBalitaStorage(allBalitaList);
+        updateDashboardData();
+        renderDatabaseTable();
+        renderClientsTable();
+        updateSaaSSummaryCards();
+        showAppToast(`Data balita "${id}" berhasil dihapus.`, "success");
+      });
+    }
+
+    // ==================== MANAJEMEN MULTI-TENANT SAAS ====================
+    function updateSaaSSummaryCards() {
+      clientsList = loadSavedClients();
+      allBalitaList = loadSavedBalita();
+      const totalKlien = clientsList.filter(c => c.role !== "Admin Utama" && c.status === "Aktif").length;
+      document.getElementById("cardTotalKlien").innerText = `${totalKlien} Klien`;
+      document.getElementById("cardTotalBalita").innerText = `${allBalitaList.length} Sasaran`;
+    }
+
+    function renderClientsTable() {
+      const tbody = document.getElementById("clientsTableBody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+      clientsList = loadSavedClients();
+      allBalitaList = loadSavedBalita();
+      const nonAdminClients = clientsList.filter(c => c.role !== "Admin Utama");
+
+      nonAdminClients.forEach((client, idx) => {
+        const clientBalitaCount = allBalitaList.filter(b => String(b.tenantId || "").toLowerCase() === String(client.username).toLowerCase()).length;
+        const rem = getRemainingDays(client.expiredDate);
+
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 transition";
+        tr.innerHTML = `
+          <td class="p-3.5 text-center font-bold text-slate-400">${idx + 1}</td>
+          <td class="p-3.5">
+            <span class="font-bold text-slate-800 block text-xs">${client.nama}</span>
+            <div class="text-[11px] font-mono text-slate-400 mt-0.5">
+              User: <span class="text-indigo-600 font-semibold">${client.username}</span> | Pass: <span class="text-slate-600">${client.password}</span>
+            </div>
+          </td>
+          <td class="p-3.5">
+            <span class="font-bold text-indigo-700 block">${(client.instansi || "").split("(")[0] || client.instansi}</span>
+            <span class="text-[11px] text-slate-400">${(client.instansi || "").includes("(") ? client.instansi.substring(client.instansi.indexOf("(")) : ""}</span>
+          </td>
+          <td class="p-3.5 text-center">
+            <span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 font-bold rounded-lg text-xs">${clientBalitaCount} Sasaran</span>
+          </td>
+          <td class="p-3.5 font-mono font-semibold text-slate-700">${client.expiredDate}</td>
+          <td class="p-3.5 text-center">
+            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${rem.isExpired ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-800"}">${rem.text}</span>
+          </td>
+          <td class="p-3.5 text-center">
+            <button onclick="toggleStopPlay('${client.username}')" class="px-3 py-1 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1.5 mx-auto ${client.status === "Aktif" ? "bg-emerald-100 text-emerald-800 hover:bg-rose-100 hover:text-rose-700 border border-emerald-300" : "bg-rose-100 text-rose-800 hover:bg-emerald-100 hover:text-emerald-700 border border-rose-300"}">
+              <i class="fa-solid ${client.status === "Aktif" ? "fa-circle-play text-emerald-600" : "fa-circle-pause text-rose-600"}"></i>
+              <span>${client.status === "Aktif" ? "PLAY (Aktif)" : "STOP (Beku)"}</span>
+            </button>
+          </td>
+          <td class="p-3.5 text-center whitespace-nowrap">
+            <button onclick="bukaDataTenant('${client.username}')" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold transition mr-1 inline-flex items-center gap-1 border border-emerald-200">
+              <i class="fa-solid fa-folder-open"></i> Buka Data
+            </button>
+            <button onclick="openModalKosongkanData('${client.username}')" class="p-1.5 px-2 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-lg text-xs font-bold transition mr-1" title="Kosongkan Data Balita Klien">
+              <i class="fa-solid fa-broom"></i>
+            </button>
+            <button onclick="openModalPerpanjang('${client.username}')" class="p-1.5 px-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-bold transition mr-1" title="Aktivasi / Perpanjang Lisensi">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+            </button>
+            <button onclick="deleteClientAccount('${client.username}')" class="p-1.5 px-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition" title="Hapus Klien">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function bukaDataTenant(username) {
+      const target = clientsList.find(c => c.username === username);
+      if (!target) return;
+      if (!isImpersonating) actualAdminUser = currentUser;
+      isImpersonating = true;
+      currentUser = target;
+      document.getElementById("impersonationBanner").classList.remove("hidden");
+      document.getElementById("impersonationBanner").classList.add("flex");
+      document.getElementById("impersonatedTenantName").innerText = target.nama;
+      document.getElementById("impersonatedTenantUser").innerText = target.username;
+      document.getElementById("headerTenantTag").innerText = `Audit: ${target.username}`;
+      switchTab("tabDatabase");
+    }
+
+    function exitImpersonation() {
+      if (!actualAdminUser) return;
+      currentUser = actualAdminUser;
+      actualAdminUser = null;
+      isImpersonating = false;
+      document.getElementById("impersonationBanner").classList.add("hidden");
+      document.getElementById("impersonationBanner").classList.remove("flex");
+      document.getElementById("headerTenantTag").innerText = "Tenant: admin";
+      switchTab("tabClientsManager");
+    }
+
+    function toggleStopPlay(username) {
+      const client = clientsList.find(c => c.username === username);
+      if (!client) return;
+      const nextStatus = client.status === "Aktif" ? "Nonaktif" : "Aktif";
+      client.status = nextStatus;
+      saveClientsStorage(clientsList);
+
+      if (isGasReady()) {
+        fetch(GAS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ action: "updateStatus", username: username, status: nextStatus })
+        }).catch(() => {});
+      }
+      renderClientsTable();
+      updateSaaSSummaryCards();
+      showAppToast(`Status klien "${username}" diubah menjadi ${nextStatus}.`, "info");
+    }
+
+    function openModalPerpanjang(username) {
+      targetRenewalUsername = username;
+      const client = clientsList.find(c => c.username === username);
+      document.getElementById("lblTargetPerpanjang").innerText = `Perpanjang masa aktif untuk: ${client.nama} (${client.username})`;
+      document.getElementById("modalPerpanjang").classList.remove("hidden");
+    }
+
+    function closeModalPerpanjang() {
+      document.getElementById("modalPerpanjang").classList.add("hidden");
+      targetRenewalUsername = null;
+    }
+
+    function applyRenewalDays(days) {
+      if (!targetRenewalUsername) return;
+      const client = clientsList.find(c => c.username === targetRenewalUsername);
+      if (!client) return;
+
+      const base = new Date();
+      base.setDate(base.getDate() + days);
+      const newExp = base.toISOString().slice(0, 10);
+      client.expiredDate = newExp;
+      client.status = "Aktif";
+      saveClientsStorage(clientsList);
+
+      if (isGasReady()) {
+        fetch(GAS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ action: "updateExpiry", username: targetRenewalUsername, newExpiry: newExp })
+        }).catch(() => {});
+      }
+      closeModalPerpanjang();
+      renderClientsTable();
+      showAppToast(`Lisensi "${client.nama}" diperpanjang hingga ${newExp}.`, "success");
+    }
+
+    function openModalTambahKlien() {
+      setModalPresetExpiry(365);
+      document.getElementById("modalTambahKlien").classList.remove("hidden");
+    }
+
+    function closeModalTambahKlien() {
+      document.getElementById("modalTambahKlien").classList.add("hidden");
+    }
+
+    function setModalPresetExpiry(days) {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      document.getElementById("mExpiryDate").value = d.toISOString().slice(0, 10);
+    }
+
+    function handleModalCreateUser(e) {
+      e.preventDefault();
+      const nama = document.getElementById("mNama").value.trim();
+      const u = document.getElementById("mUsername").value.trim().toLowerCase();
+      const p = document.getElementById("mPassword").value.trim();
+      const instansi = document.getElementById("mInstansi").value.trim();
+      const exp = document.getElementById("mExpiryDate").value;
+
+      if (clientsList.some(c => c.username.toLowerCase() === u)) {
+        showAppToast("Username tersebut sudah digunakan!", "warning");
+        return;
+      }
+
+      const newClient = {
+        id: `USR-0${clientsList.length + 1}`,
+        username: u,
+        password: p,
+        nama: nama,
+        instansi: instansi,
+        role: "Ahli Gizi",
+        expiredDate: exp,
+        status: "Aktif"
+      };
+      clientsList.push(newClient);
+      saveClientsStorage(clientsList);
+
+      if (isGasReady()) {
+        fetch(GAS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            action: "addUser", username: u, password: p, nama: nama,
+            instansi: instansi, role: "Ahli Gizi", expiredDate: exp
+          })
+        }).catch(() => {});
+      }
+      closeModalTambahKlien();
+      renderClientsTable();
+      updateSaaSSummaryCards();
+      showAppToast(`Klien baru (${nama}) berhasil didaftarkan.`, "success");
+    }
+
+    function deleteClientAccount(username) {
+      openConfirmDialog(
+        "Hapus Akun Klien",
+        `Hapus akun klien "${username}"? Seluruh data penimbangan klien ini juga akan terhapus.`,
+        () => {
+          clientsList = clientsList.filter(c => c.username !== username);
+          allBalitaList = allBalitaList.filter(b => String(b.tenantId || "").toLowerCase() !== String(username).toLowerCase());
+          saveClientsStorage(clientsList);
+          saveBalitaStorage(allBalitaList);
+
+          if (isGasReady()) {
+            fetch(GAS_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({ action: "deleteUser", username: username })
+            }).catch(() => {});
+            fetch(GAS_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({ action: "clearTenantData", tenantId: username })
+            }).catch(() => {});
+          }
+          renderClientsTable();
+          updateSaaSSummaryCards();
+          showAppToast(`Akun klien "${username}" berhasil dihapus.`, "success");
+        }
+      );
+    }
+
+    function refreshClientsData(silent = false) {
+      if (!isGasReady()) {
+        clientsList = loadSavedClients();
+        renderClientsTable();
+        updateSaaSSummaryCards();
+        if (!silent) showAppToast("Sinkronisasi data SaaS lokal selesai.", "success");
+      } else {
+        fetch(`${GAS_URL}?action=getUsers`)
+        .then(r => r.json())
+        .then(res => {
+          if (res.status === "success" && Array.isArray(res.data)) {
+            clientsList = res.data;
+            saveClientsStorage(clientsList);
+            renderClientsTable();
+            updateSaaSSummaryCards();
+            if (!silent) showAppToast("Data klien berhasil disinkronkan dari Google Sheets.", "success");
+          }
+        })
+        .catch(() => {
+          if (!silent) showAppToast("Gagal mengambil data klien dari Google Sheets.", "error");
+        });
+      }
+    }
+
+    // ==================== DASHBOARD & ISOLASI DATABASE ====================
+    function getActiveTenantBalita() {
+      allBalitaList = loadSavedBalita();
+      if (!currentUser) return [];
+      if (currentUser.role === "Admin Utama" && !isImpersonating) return allBalitaList;
+      return allBalitaList.filter(b => String(b.tenantId || "").toLowerCase() === String(currentUser.username).toLowerCase());
+    }
+
+    function updateDashboardData() {
+      if (!currentUser) return;
+      const tenantBalita = getActiveTenantBalita();
+      const total = tenantBalita.length;
+      let nBB = 0, nStunted = 0, nWasted = 0;
+      let cNorm = 0, cOver = 0, cUnder = 0, cStunt = 0, cTall = 0;
+
+      tenantBalita.forEach(item => {
+        const m = Math.max(0, Math.min(parseInt(item.total_bln, 10) || 0, 60));
+        const jkNorm = normalizeJK(item.jk);
+        const tbl = jkNorm === "P" ? STANDAR_P[m] : STANDAR_L[m];
+        if (tbl) {
+          const bb = parseSafeNumber(item.bb);
+          const tb = parseSafeNumber(item.tb);
+          if (!isNaN(bb) && bb > 0) {
+            if (bb < tbl.bb_min2) { nWasted++; cUnder++; }
+            else if (bb > tbl.bb_plus1) { cOver++; }
+            else { nBB++; cNorm++; }
+          }
+          if (!isNaN(tb) && tb > 0) {
+            if (tb < tbl.tb_min2) { nStunted++; cStunt++; }
+            else if (tb > tbl.tb_plus3) { cTall++; }
+          }
+        }
+      });
+
+      document.getElementById("statTotal").innerText = `${total} Balita`;
+      document.getElementById("statBBNormal").innerText = `${nBB} Balita`;
+      document.getElementById("statStunted").innerText = `${nStunted} Balita`;
+      document.getElementById("statWasted").innerText = `${nWasted} Balita`;
+
+      document.getElementById("dashboardTenantInfo").innerHTML = isImpersonating
+        ? `Memantau data milik: <strong>${currentUser.nama}</strong> (${currentUser.instansi})`
+        : `Masuk sebagai: <strong>${currentUser.nama}</strong> (${currentUser.role})`;
+
+      const rem = getRemainingDays(currentUser.expiredDate);
+      document.getElementById("tenantLicenseBadge").innerHTML = `
+        <span class="px-3 py-1 rounded-xl text-xs font-bold ${rem.isExpired ? "bg-rose-100 text-rose-800" : "bg-emerald-100 text-emerald-800"}">
+          Lisensi: ${rem.text}
+        </span>`;
+
+      if (chartInstance) {
+        chartInstance.data.datasets[0].data = [cNorm, cOver, cUnder, cStunt, cTall];
+        chartInstance.update();
+      }
+    }
+
+    function renderDatabaseTable() {
+      const tbody = document.getElementById("dbTableBody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+      const tenantBalita = getActiveTenantBalita();
+      document.getElementById("lblCurrentTenant").innerText = currentUser ? currentUser.username : "-";
+
+      if (tenantBalita.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="13" class="p-8 text-center text-slate-400">Belum ada data pada tenant ini.</td></tr>`;
+        return;
+      }
+
+      tenantBalita.forEach(item => {
+        const posyKel = [item.posy, item.kel].filter(Boolean).join(" / ") || "-";
+        const jkNorm = normalizeJK(item.jk);
+        const bbClass = item.stat_bb === "Normal"
+          ? "bg-emerald-100 text-emerald-800"
+          : (item.stat_bb === "Risiko Lebih" ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800");
+        const tbClass = item.stat_tb === "Normal"
+          ? "bg-emerald-100 text-emerald-800"
+          : (item.stat_tb === "Tinggi" ? "bg-sky-100 text-sky-800" : "bg-amber-100 text-amber-800");
+
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 transition";
+        tr.innerHTML = `
+          <td class="p-3 font-mono font-semibold text-slate-500">${item.id || "-"}</td>
+          <td class="p-3 font-mono font-bold text-indigo-600">${item.tenantId || "-"}</td>
+          <td class="p-3 font-mono text-slate-600">${item.nik || "-"}</td>
+          <td class="p-3 font-bold text-slate-800">${item.nama || "-"}</td>
+          <td class="p-3 font-semibold ${jkNorm === "L" ? "text-blue-600" : "text-pink-600"}">${jkNorm}</td>
+          <td class="p-3">${item.thn || 0} Th ${item.bln || 0} Bl (${item.total_bln || 0} Bln)</td>
+          <td class="p-3 text-slate-600">${posyKel}</td>
+          <td class="p-3 font-bold text-teal-700">${item.bb !== undefined && item.bb !== "" ? item.bb + " Kg" : "-"}</td>
+          <td class="p-3 font-bold text-emerald-700">${item.tb !== undefined && item.tb !== "" ? item.tb + " cm" : "-"}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded text-[11px] font-bold ${bbClass}">${item.stat_bb || "-"}</span></td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded text-[11px] font-bold ${tbClass}">${item.stat_tb || "-"}</span></td>
+          <td class="p-3 text-slate-500">${item.petugas || "-"}</td>
+          <td class="p-3 text-center">
+            <button onclick="deleteSingleBalita('${String(item.id || "").replace(/'/g, "\\'")}')" class="p-1.5 px-2 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-lg text-xs transition" title="Hapus baris ini">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function refreshDatabaseData(silent = false) {
+      if (!isGasReady()) {
+        allBalitaList = loadSavedBalita();
+        renderDatabaseTable();
+        updateDashboardData();
+        if (!silent) showAppToast("Database tenant diperbarui.", "success");
+        return;
+      }
+
+      const tenantParam = (currentUser && currentUser.role === "Admin Utama" && !isImpersonating)
+        ? ""
+        : (currentUser ? currentUser.username : "");
+
+      fetch(`${GAS_URL}?action=getDataBalita&tenantId=${encodeURIComponent(tenantParam)}`)
+      .then(r => r.json())
+      .then(res => {
+        if (res.status === "success" && Array.isArray(res.data)) {
+          if (tenantParam === "") {
+            allBalitaList = res.data;
+          } else {
+            const others = loadSavedBalita().filter(b => String(b.tenantId || "").toLowerCase() !== tenantParam.toLowerCase());
+            allBalitaList = [...others, ...res.data];
+          }
+          saveBalitaStorage(allBalitaList);
+          renderDatabaseTable();
+          updateDashboardData();
+          renderClientsTable();
+          updateSaaSSummaryCards();
+          if (!silent) showAppToast("Database tenant disinkronkan dari Google Sheets.", "success");
+        }
+      })
+      .catch(() => {
+        if (!silent) showAppToast("Gagal mengambil data dari Google Sheets.", "error");
+      });
+    }
+
+    function exportCurrentDatabase() {
+      const tenantBalita = getActiveTenantBalita();
+      if (tenantBalita.length === 0) {
+        showAppToast("Tidak ada data pada tenant ini untuk diekspor.", "warning");
+        return;
+      }
+
+      const rows = tenantBalita.map((r, idx) => [
+        r.no !== undefined && r.no !== "" ? r.no : `${idx + 1}.`,
+        r.nik !== undefined && r.nik !== null ? String(r.nik) : "",
+        r.nama || "",
+        formatExcelDate(r.tglLahir),
+        normalizeJK(r.jk),
+        r.thn !== undefined && r.thn !== "" ? Number(r.thn) : "",
+        r.bln !== undefined && r.bln !== "" ? Number(r.bln) : "",
+        r.nm_ortu || "", r.pkm || "", r.kel || "", r.posy || "",
+        r.rt !== undefined && r.rt !== null ? r.rt : "",
+        r.rw !== undefined && r.rw !== null ? r.rw : "",
+        r.alamat || "",
+        formatExcelDate(r.tgl_ukur),
+        r.bb !== undefined && r.bb !== "" && r.bb !== null ? parseSafeNumber(r.bb) : "",
+        r.tb !== undefined && r.tb !== "" && r.tb !== null ? parseSafeNumber(r.tb) : "",
+        r.lila !== undefined && r.lila !== null ? r.lila : "",
+        r.lingkar_kepala !== undefined && r.lingkar_kepala !== null ? r.lingkar_kepala : "",
+        r.pitting_edema !== undefined && r.pitting_edema !== null ? r.pitting_edema : "",
+        r.cara_ukur !== undefined && r.cara_ukur !== null ? r.cara_ukur : "",
+        r.vita !== undefined && r.vita !== null ? r.vita : "",
+        r.asi_bulan_0 !== undefined && r.asi_bulan_0 !== null ? r.asi_bulan_0 : "",
+        r.asi_bulan_1 !== undefined && r.asi_bulan_1 !== null ? r.asi_bulan_1 : "",
+        r.asi_bulan_2 !== undefined && r.asi_bulan_2 !== null ? r.asi_bulan_2 : "",
+        r.asi_bulan_3 !== undefined && r.asi_bulan_3 !== null ? r.asi_bulan_3 : "",
+        r.asi_bulan_4 !== undefined && r.asi_bulan_4 !== null ? r.asi_bulan_4 : "",
+        r.asi_bulan_5 !== undefined && r.asi_bulan_5 !== null ? r.asi_bulan_5 : "",
+        r.asi_bulan_6 !== undefined && r.asi_bulan_6 !== null ? r.asi_bulan_6 : "",
+        r.kelas_ibu_balita !== undefined && r.kelas_ibu_balita !== null ? r.kelas_ibu_balita : "",
+        r.mbg !== undefined && r.mbg !== null ? r.mbg : ""
+      ]);
+
+      const tenantName = currentUser ? currentUser.username.toUpperCase() : "TENANT";
+      buildAndDownloadExcel31Cols(rows, `DATA_BALITA_${tenantName}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      showAppToast("File Excel 31 kolom berhasil diekspor.", "success");
+    }
+
+    // ==================== BATCH EXCEL (31 KOLOM) ====================
+    function resetExcelUpload(silent = false) {
+      processedExcelData = [];
+      const inp = document.getElementById("excelFileInput");
+      if (inp) inp.value = "";
+      const info = document.getElementById("fileInfoLabel");
+      if (info) info.classList.add("hidden");
+      const span = document.getElementById("fileNameSpan");
+      if (span) span.innerText = "";
+      const tbody = document.getElementById("excelTableBody");
+      if (tbody) tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400">Belum ada file Excel yang diunggah.</td></tr>`;
+      const lbl = document.getElementById("excelRowCountLabel");
+      if (lbl) lbl.innerText = "Pratinjau Data Import";
+      ["btnProcessExcel", "btnDownloadExcel", "btnResetExcel"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = true;
+      });
+      if (!silent) showAppToast("Pratinjau Excel direset.", "info");
+    }
+
+    function handleExcelUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      document.getElementById("fileNameSpan").innerText = file.name;
+      document.getElementById("fileInfoLabel").classList.remove("hidden");
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const wb = XLSX.read(data, { type: "array", raw: true });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: true });
+          parseExcel(json);
+        } catch (err) {
+          showAppToast("Gagal membaca berkas Excel. Pastikan format .xlsx / .xls valid.", "error");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function resolveColumnIndexMap(headerRow) {
+      const map = {};
+      EXCEL_HEADERS_FOTO.forEach((h, i) => { map[h.toLowerCase()] = i; });
+      if (Array.isArray(headerRow) && headerRow.length > 0) {
+        const detected = {};
+        headerRow.forEach((cell, idx) => {
+          const key = String(cell || "").trim().toLowerCase();
+          if (key && Object.prototype.hasOwnProperty.call(map, key)) detected[key] = idx;
+        });
+        if (detected["nama_anak"] !== undefined) {
+          Object.keys(detected).forEach(k => { map[k] = detected[k]; });
+        }
+      }
+      return map;
+    }
+
+    function parseExcel(rows) {
+      processedExcelData = [];
+      const tbody = document.getElementById("excelTableBody");
+      tbody.innerHTML = "";
+
+      if (!rows || rows.length < 2) {
+        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400">File Excel kosong atau tidak memiliki baris data.</td></tr>`;
+        ["btnProcessExcel", "btnDownloadExcel", "btnResetExcel"].forEach(id => {
+          document.getElementById(id).disabled = true;
+        });
+        return;
+      }
+
+      const colMap = resolveColumnIndexMap(rows[0]);
+      const getVal = (row, key) => {
+        const idx = colMap[key.toLowerCase()];
+        return idx !== undefined && row[idx] !== undefined ? row[idx] : "";
+      };
+
+      let count = 0;
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r) continue;
+        const namaRaw = String(getVal(r, "nama_anak") || "").trim();
+        if (!namaRaw) continue;
+
+        const noVal = getVal(r, "No");
+        const nikStr = String(getVal(r, "NIK") || "").trim();
+        const tglLahirStr = formatExcelDate(getVal(r, "tgl_lahir"));
+        const jk = normalizeJK(getVal(r, "jk"));
+        const tglUkurStr = formatExcelDate(getVal(r, "TANGGALUKUR"));
+
+        const thnFile = parseNullableInt(getVal(r, "umur_tahun"));
+        const blnFile = parseNullableInt(getVal(r, "umur_bulan"));
+        let thn = 0, bln = 0, totalBln = 0;
+
+        if (thnFile !== null || blnFile !== null) {
+          thn = thnFile || 0;
+          bln = blnFile || 0;
+          totalBln = Math.max(0, (thn * 12) + bln);
+        } else {
+          const calcAge = calculateAgeMonths(tglLahirStr, tglUkurStr);
+          thn = calcAge.thn; bln = calcAge.bln; totalBln = calcAge.totalBln;
+        }
+
+        const stdBln = Math.max(0, Math.min(totalBln, 60));
+        const bb = parseDecimalValue(getVal(r, "BERAT"));
+        const tb = parseDecimalValue(getVal(r, "TINGGI"));
+
+        const normalizedRow = [
+          noVal !== "" ? noVal : `${count + 1}.`,
+          nikStr, namaRaw, tglLahirStr, jk, thn, bln,
+          getVal(r, "nm_ortu"), getVal(r, "PKM"), getVal(r, "KEL"), getVal(r, "POSY"),
+          getVal(r, "RT"), getVal(r, "RW"), getVal(r, "ALAMAT"), tglUkurStr,
+          bb !== null ? bb : "", tb !== null ? tb : "",
+          getVal(r, "LILA"), getVal(r, "lingkar_kepala"), getVal(r, "Pitting_edema"),
+          getVal(r, "CARAUKUR"), getVal(r, "vita"),
+          getVal(r, "asi_bulan_0"), getVal(r, "asi_bulan_1"), getVal(r, "asi_bulan_2"),
+          getVal(r, "asi_bulan_3"), getVal(r, "asi_bulan_4"), getVal(r, "asi_bulan_5"),
+          getVal(r, "asi_bulan_6"), getVal(r, "kelas_ibu_balita"), getVal(r, "mbg")
+        ];
+
+        count++;
+        processedExcelData.push({
+          idx: count, no: normalizedRow[0], nik: nikStr, nama: namaRaw,
+          tglLahir: tglLahirStr, jk: jk, thn: thn, bln: bln, totalBln: totalBln, stdBln: stdBln,
+          nm_ortu: String(normalizedRow[7] || ""), pkm: String(normalizedRow[8] || ""),
+          kel: String(normalizedRow[9] || ""), posy: String(normalizedRow[10] || ""),
+          rt: normalizedRow[11], rw: normalizedRow[12], alamat: String(normalizedRow[13] || ""),
+          tgl_ukur: tglUkurStr, bb: bb, tb: tb, origBB: bb, origTB: tb,
+          lila: normalizedRow[17], lingkar_kepala: normalizedRow[18], pitting_edema: normalizedRow[19],
+          cara_ukur: normalizedRow[20], vita: normalizedRow[21],
+          asi_bulan_0: normalizedRow[22], asi_bulan_1: normalizedRow[23], asi_bulan_2: normalizedRow[24],
+          asi_bulan_3: normalizedRow[25], asi_bulan_4: normalizedRow[26], asi_bulan_5: normalizedRow[27],
+          asi_bulan_6: normalizedRow[28], kelas_ibu_balita: normalizedRow[29], mbg: normalizedRow[30],
+          normalizedRow: normalizedRow,
+          isReal: (bb !== null && bb > 0) || (tb !== null && tb > 0)
+        });
+
+        const posyKel = [normalizedRow[10], normalizedRow[9]].filter(Boolean).join(" / ") || "-";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="p-3">${normalizedRow[0]}</td>
+          <td class="p-3 font-mono text-slate-600">${nikStr || "-"}</td>
+          <td class="p-3 font-bold text-slate-800">${namaRaw}</td>
+          <td class="p-3 font-mono">${tglLahirStr || "-"}</td>
+          <td class="p-3 font-semibold ${jk === "L" ? "text-blue-600" : "text-pink-600"}">${jk}</td>
+          <td class="p-3">${thn} Th ${bln} Bl</td>
+          <td class="p-3 font-mono font-bold">${totalBln}</td>
+          <td class="p-3 text-slate-600">${posyKel}</td>
+          <td class="p-3 font-mono">${tglUkurStr || "-"}</td>
+          <td class="p-3 font-bold text-teal-700" id="ex-bb-${count}">${bb !== null ? bb + " Kg" : '<span class="text-slate-400">Kosong</span>'}</td>
+          <td class="p-3 font-bold text-teal-700" id="ex-tb-${count}">${tb !== null ? tb + " cm" : '<span class="text-slate-400">Kosong</span>'}</td>
+          <td class="p-3" id="ex-st-${count}"><span class="px-2 py-0.5 rounded text-[11px] font-bold ${bb !== null && tb !== null ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}">${bb !== null && tb !== null ? "Data Riil" : "Siap Diisi"}</span></td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      document.getElementById("excelRowCountLabel").innerText = `Pratinjau Data Import (${count} baris terbaca)`;
+      document.getElementById("btnProcessExcel").disabled = count === 0;
+      document.getElementById("btnResetExcel").disabled = count === 0;
+      document.getElementById("btnDownloadExcel").disabled = true;
+    }
+
+    async function processAutoFillExcel() {
+      if (processedExcelData.length === 0) return;
+      const btnProc = document.getElementById("btnProcessExcel");
+      const origHtml = btnProc.innerHTML;
+      btnProc.disabled = true;
+      btnProc.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Memproses & Menyimpan...';
+
+      const policy = document.querySelector('input[name="fillPolicyRadio"]:checked').value;
+      const mode = document.getElementById("autoFillMode").value;
+      const tenantTarget = currentUser ? currentUser.username : "peserta";
+      const petugasNama = currentUser ? currentUser.nama : "Ahli Gizi";
+
+      processedExcelData.forEach((item, idx) => {
+        const tbl = item.jk === "L" ? STANDAR_L[item.stdBln] : STANDAR_P[item.stdBln];
+        let tBB = tbl.bb_med;
+        let tTB = tbl.tb_med;
+
+        if (mode === "min2sd") { tBB = tbl.bb_min2; tTB = tbl.tb_min2; }
+        else if (mode === "plus1sd") { tBB = tbl.bb_plus1; tTB = tbl.tb_plus3; }
+
+        let statusLabel = "Terisi Baku";
+        if (policy === "empty_only") {
+          item.bb = item.origBB !== null ? item.origBB : tBB;
+          item.tb = item.origTB !== null ? item.origTB : tTB;
+          if (item.origBB !== null && item.origTB !== null) statusLabel = "Riil Terjaga";
+        } else {
+          item.bb = tBB;
+          item.tb = tTB;
+        }
+
+        item.normalizedRow[15] = item.bb;
+        item.normalizedRow[16] = item.tb;
+
+        const elBB = document.getElementById(`ex-bb-${idx + 1}`);
+        const elTB = document.getElementById(`ex-tb-${idx + 1}`);
+        const elSt = document.getElementById(`ex-st-${idx + 1}`);
+        if (elBB) elBB.innerHTML = `<span class="bg-teal-100 text-teal-800 px-2 py-0.5 rounded font-bold">${item.bb} Kg</span>`;
+        if (elTB) elTB.innerHTML = `<span class="bg-teal-100 text-teal-800 px-2 py-0.5 rounded font-bold">${item.tb} cm</span>`;
+        if (elSt) elSt.innerHTML = `<span class="${statusLabel === "Riil Terjaga" ? "bg-sky-100 text-sky-800" : "bg-emerald-100 text-emerald-800"} px-2 py-0.5 rounded font-bold">${statusLabel}</span>`;
+      });
+
+      const tenantRecords = processedExcelData.map((item, i) => {
+        const tbl = item.jk === "L" ? STANDAR_L[item.stdBln] : STANDAR_P[item.stdBln];
+        return {
+          id: `EXC-${tenantTarget.toUpperCase()}-${i + 1}`,
+          tenantId: tenantTarget,
+          no: item.no, nik: item.nik, nama: item.nama, tglLahir: item.tglLahir,
+          jk: item.jk, thn: item.thn, bln: item.bln, total_bln: item.totalBln,
+          nm_ortu: item.nm_ortu, pkm: item.pkm, kel: item.kel, posy: item.posy,
+          rt: item.rt, rw: item.rw, alamat: item.alamat, tgl_ukur: item.tgl_ukur,
+          bb: item.bb, tb: item.tb, lila: item.lila, lingkar_kepala: item.lingkar_kepala,
+          pitting_edema: item.pitting_edema, cara_ukur: item.cara_ukur, vita: item.vita,
+          asi_bulan_0: item.asi_bulan_0, asi_bulan_1: item.asi_bulan_1, asi_bulan_2: item.asi_bulan_2,
+          asi_bulan_3: item.asi_bulan_3, asi_bulan_4: item.asi_bulan_4, asi_bulan_5: item.asi_bulan_5,
+          asi_bulan_6: item.asi_bulan_6, kelas_ibu_balita: item.kelas_ibu_balita, mbg: item.mbg,
+          stat_bb: evaluateStatusBB(item.bb, tbl),
+          stat_tb: evaluateStatusTB(item.tb, tbl),
+          petugas: petugasNama
+        };
+      });
+
+      const otherTenantData = loadSavedBalita().filter(b => String(b.tenantId || "").toLowerCase() !== tenantTarget.toLowerCase());
+      allBalitaList = [...otherTenantData, ...tenantRecords];
+      saveBalitaStorage(allBalitaList);
+
+      let syncMsg = "";
+      if (isGasReady()) {
+        try {
+          const resp = await fetch(GAS_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              action: "batchSyncBalita",
+              tenantId: tenantTarget,
+              data: JSON.stringify(tenantRecords)
+            })
+          });
+          const res = await resp.json();
+          syncMsg = res.status === "success"
+            ? " dan tersinkron ke Google Sheets"
+            : ` (peringatan GAS: ${res.message || "gagal sinkron"})`;
+        } catch (err) {
+          syncMsg = " (tersimpan lokal, gagal menghubungi Google Sheets)";
+        }
+      }
+
+      btnProc.disabled = false;
+      btnProc.innerHTML = origHtml;
+      document.getElementById("btnDownloadExcel").disabled = false;
+      updateDashboardData();
+      renderDatabaseTable();
+      renderClientsTable();
+      updateSaaSSummaryCards();
+      showAppToast(`Selesai (${tenantRecords.length} data) di bawah Tenant "${tenantTarget}"${syncMsg}.`, "success");
+    }
+
+    function downloadProcessedExcel() {
+      if (processedExcelData.length === 0) return;
+      const dataRows = processedExcelData.map(d => {
+        const outRow = [...d.normalizedRow];
+        while (outRow.length < EXCEL_HEADERS_FOTO.length) outRow.push("");
+        outRow[15] = d.bb !== null ? Number(d.bb) : "";
+        outRow[16] = d.tb !== null ? Number(d.tb) : "";
+        return outRow.slice(0, EXCEL_HEADERS_FOTO.length);
+      });
+      const tenantName = currentUser ? currentUser.username.toUpperCase() : "TENANT";
+      buildAndDownloadExcel31Cols(dataRows, `HASIL_POSYANDU_${tenantName}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      showAppToast("File Excel hasil otomatisasi berhasil diunduh.", "success");
+    }
+
+    function updatePolicyVisual(val) {
+      const k = document.getElementById("cardPolicyKeep");
+      const o = document.getElementById("cardPolicyOverwrite");
+      if (val === "empty_only") {
+        k.className = "relative flex flex-col p-4 rounded-xl border-2 border-teal-500 bg-white cursor-pointer shadow-sm";
+        o.className = "relative flex flex-col p-4 rounded-xl border border-slate-200 bg-white cursor-pointer shadow-sm";
+      } else {
+        o.className = "relative flex flex-col p-4 rounded-xl border-2 border-amber-500 bg-white cursor-pointer shadow-sm";
+        k.className = "relative flex flex-col p-4 rounded-xl border border-slate-200 bg-white cursor-pointer shadow-sm";
+      }
+    }
+
+    // ==================== KALKULATOR PERORANGAN ====================
+    function handleSingleCalc(e) {
+      e.preventDefault();
+      const jk = document.querySelector('input[name="calcGender"]:checked').value;
+      const thn = parseInt(document.getElementById("calcUmurThn").value, 10) || 0;
+      const bln = parseInt(document.getElementById("calcUmurBln").value, 10) || 0;
+      const totalBln = Math.max(0, Math.min((thn * 12) + bln, 60));
+
+      const tbl = jk === "L" ? STANDAR_L[totalBln] : STANDAR_P[totalBln];
+      if (!tbl) return;
+
+      document.getElementById("resBadgeJK").innerText = `${jk === "L" ? "Laki-laki" : "Perempuan"} (${totalBln} Bulan)`;
+      document.getElementById("resBBMedian").innerHTML = `${tbl.bb_med} <span class="text-sm font-semibold">Kg</span>`;
+      document.getElementById("resBBRange").innerText = `${tbl.bb_min2} s/d ${tbl.bb_plus1} Kg`;
+      document.getElementById("resTBMedian").innerHTML = `${tbl.tb_med} <span class="text-sm font-semibold">cm</span>`;
+      document.getElementById("resTBRange").innerText = `< ${tbl.tb_min2} cm`;
+
+      const bbR = parseSafeNumber(document.getElementById("calcBBRiil").value);
+      const tbR = parseSafeNumber(document.getElementById("calcTBRiil").value);
+      const evalBox = document.getElementById("evalRiilContent");
+
+      if (!isNaN(bbR) || !isNaN(tbR)) {
+        const txt = [];
+        if (!isNaN(bbR)) {
+          const s = evaluateStatusBB(bbR, tbl);
+          txt.push(`&bull; BB/U: <strong>${bbR} Kg</strong> &rarr; <span class="${s === "Normal" ? "text-emerald-700" : "text-rose-600"} font-bold">${s}</span>`);
+        }
+        if (!isNaN(tbR)) {
+          const s = evaluateStatusTB(tbR, tbl);
+          txt.push(`&bull; TB/U: <strong>${tbR} cm</strong> &rarr; <span class="${s === "Normal" ? "text-emerald-700" : "text-amber-600"} font-bold">${s}</span>`);
+        }
+        evalBox.innerHTML = txt.join("<br>");
+      } else {
+        evalBox.innerHTML = `Standar baku ideal untuk balita usia ${totalBln} bulan adalah <strong>BB: ${tbl.bb_med} Kg</strong> dan <strong>TB: ${tbl.tb_med} cm</strong>.`;
+      }
+    }
+
+    async function saveSingleToDatabase() {
+      const nama = document.getElementById("calcNama").value.trim();
+      if (!nama) {
+        showAppToast("Silakan masukkan nama balita terlebih dahulu.", "warning");
+        return;
+      }
+      const jk = document.querySelector('input[name="calcGender"]:checked').value;
+      const thn = parseInt(document.getElementById("calcUmurThn").value, 10) || 0;
+      const bln = parseInt(document.getElementById("calcUmurBln").value, 10) || 0;
+      const totalBln = (thn * 12) + bln;
+      const stdBln = Math.max(0, Math.min(totalBln, 60));
+      const tbl = jk === "L" ? STANDAR_L[stdBln] : STANDAR_P[stdBln];
+
+      const bbInput = parseSafeNumber(document.getElementById("calcBBRiil").value);
+      const tbInput = parseSafeNumber(document.getElementById("calcTBRiil").value);
+      const bb = !isNaN(bbInput) && bbInput > 0 ? bbInput : tbl.bb_med;
+      const tb = !isNaN(tbInput) && tbInput > 0 ? tbInput : tbl.tb_med;
+
+      const tenantTarget = currentUser ? currentUser.username : "peserta";
+      const todayIso = new Date().toISOString().slice(0, 10);
+      const newRec = {
+        id: `BAL-${tenantTarget.toUpperCase()}-${Date.now().toString().slice(-4)}`,
+        tenantId: tenantTarget, no: "", nik: "", nama: nama, tglLahir: "",
+        jk: jk, thn: thn, bln: bln, total_bln: totalBln,
+        nm_ortu: "", pkm: "", kel: "", posy: "", rt: "", rw: "", alamat: "",
+        tgl_ukur: todayIso, bb: bb, tb: tb,
+        lila: "", lingkar_kepala: "", pitting_edema: "", cara_ukur: "", vita: "",
+        asi_bulan_0: "", asi_bulan_1: "", asi_bulan_2: "", asi_bulan_3: "",
+        asi_bulan_4: "", asi_bulan_5: "", asi_bulan_6: "", kelas_ibu_balita: "", mbg: "",
+        stat_bb: evaluateStatusBB(bb, tbl),
+        stat_tb: evaluateStatusTB(tb, tbl),
+        petugas: currentUser ? currentUser.nama : "Petugas"
+      };
+
+      const btn = document.getElementById("btnSaveSingle");
+      if (btn) btn.disabled = true;
+
+      if (isGasReady()) {
+        try {
+          const resp = await fetch(GAS_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              action: "saveBalita", tenantId: tenantTarget, nama: newRec.nama,
+              jk: newRec.jk, tglLahir: newRec.tglLahir, thn: newRec.thn,
+              bln: newRec.bln, total_bln: newRec.total_bln, bb: newRec.bb, tb: newRec.tb,
+              stat_bb: newRec.stat_bb, stat_tb: newRec.stat_tb, petugas: newRec.petugas,
+              tgl_ukur: newRec.tgl_ukur
+            })
+          });
+          const res = await resp.json();
+          if (res.status === "success" && res.id) newRec.id = res.id;
+        } catch (err) {}
+      }
+
+      if (btn) btn.disabled = false;
+      allBalitaList = loadSavedBalita();
+      allBalitaList.unshift(newRec);
+      saveBalitaStorage(allBalitaList);
+
+      updateDashboardData();
+      renderDatabaseTable();
+      renderClientsTable();
+      updateSaaSSummaryCards();
+      showAppToast(`Data ${nama} berhasil disimpan ke Tenant: ${tenantTarget}.`, "success");
+      switchTab("tabDatabase");
+    }
+
+    // ==================== MASTER TABEL STANDAR ====================
+    function renderStandarTable() {
+      const gender = document.getElementById("filterGenderTable").value;
+      const src = gender === "L" ? STANDAR_L : STANDAR_P;
+      const tbody = document.getElementById("standarTableBody");
+      tbody.innerHTML = "";
+
+      for (let m = 0; m <= 60; m++) {
+        const d = src[m];
+        if (!d) continue;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="p-3 font-mono font-bold">${m}</td>
+          <td class="p-3">${Math.floor(m / 12)} Th ${m % 12} Bl</td>
+          <td class="p-3 bg-teal-50 text-rose-700 font-semibold">${d.bb_min2}</td>
+          <td class="p-3 bg-teal-100 text-teal-900 font-bold">${d.bb_med}</td>
+          <td class="p-3 bg-teal-50 text-amber-700 font-semibold">${d.bb_plus1}</td>
+          <td class="p-3 bg-emerald-50 text-rose-700 font-semibold">${d.tb_min2}</td>
+          <td class="p-3 bg-emerald-100 text-emerald-900 font-bold">${d.tb_med}</td>
+          <td class="p-3 bg-emerald-50 text-blue-700 font-semibold">${d.tb_plus3}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // ==================== GRAFIK DISTRIBUSI ====================
+    function initGrowthChart() {
+      const el = document.getElementById("growthChart");
+      if (!el) return;
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(el.getContext("2d"), {
+        type: "bar",
+        data: {
+          labels: ["Gizi Baik (Normal)", "Risiko BB Lebih", "Gizi Kurang", "Pendek (Stunted)", "Tinggi"],
+          datasets: [{
+            label: "Jumlah Balita",
+            data: [0, 0, 0, 0, 0],
+            backgroundColor: ["#10b981", "#f59e0b", "#ef4444", "#f97316", "#3b82f6"],
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

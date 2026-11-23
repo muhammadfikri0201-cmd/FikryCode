@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <!-- Gradasi latar utama Indigo ke Teal -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b" />
+      <stop offset="55%" stop-color="#312e81" />
+      <stop offset="100%" stop-color="#0f766e" />
+    </linearGradient>
+
+    <!-- Cahaya ambient -->
+    <radialGradient id="glowEmerald" cx="82%" cy="20%" r="35%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="glowIndigo" cx="18%" cy="85%" r="35%">
+      <stop offset="0%" stop-color="#818cf8" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#818cf8" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Pola grid halus -->
+    <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1" />
+    </pattern>
+  </defs>
+
+  <!-- Latar belakang -->
+  <rect width="800" height="450" fill="url(#bgGrad)" />
+  <rect width="800" height="450" fill="url(#gridPattern)" />
+  <rect width="800" height="450" fill="url(#glowEmerald)" />
+  <rect width="800" height="450" fill="url(#glowIndigo)" />
+
+  <!-- Emblem Ikon Medis -->
+  <rect x="56" y="68" width="72" height="72" rx="18" fill="#ffffff" fill-opacity="0.12" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.5" />
+  <rect x="84" y="86" width="16" height="36" rx="4" fill="#34d399" />
+  <rect x="74" y="96" width="36" height="16" rx="4" fill="#34d399" />
+
+  <!-- Badge SAAS MULTI-TENANT -->
+  <rect x="148" y="74" width="164" height="28" rx="14" fill="#34d399" fill-opacity="0.22" stroke="#6ee7b7" stroke-opacity="0.5" stroke-width="1.2" />
+  <text x="230" y="93" text-anchor="middle" fill="#a7f3d0" font-family="Plus Jakarta Sans, Segoe UI, sans-serif" font-size="12" font-weight="700" letter-spacing="0.8">SAAS MULTI-TENANT</text>
+
+  <!-- Judul & Subjudul -->
+  <text x="56" y="200" fill="#ffffff" font-family="Plus Jakarta Sans, Segoe UI, sans-serif" font-size="44" font-weight="800">NutriAuto Pro</text>
+  <text x="56" y="238" fill="#99f6e4" font-family="Plus Jakarta Sans, Segoe UI, sans-serif" font-size="20" font-weight="600">Platform Posyandu &amp; Antropometri Balita</text>
+  <text x="56" y="274" fill="#e2e8f0" fill-opacity="0.88" font-family="Plus Jakarta Sans, Segoe UI, sans-serif" font-size="14.5" font-weight="500">Standar Permenkes RI No. 2 Tahun 2020  •  Ekspor 31 Kolom</text>
+
+  <!-- Kartu Mini Grafik Pertumbuhan -->
+  <rect x="515" y="112" width="232" height="228" rx="20" fill="#0f172a" fill-opacity="0.4" stroke="#ffffff" stroke-opacity="0.18" stroke-width="1.2" />
+  <text x="540" y="146" fill="#cbd5e1" font-family="Plus Jakarta Sans, Segoe UI, sans-serif" font-size="12" font-weight="700" letter-spacing="0.6">GRAFIK STATUS GIZI</text>
+
+  <!-- Batang Grafik -->
+  <rect x="545" y="183" width="28" height="112" rx="7" fill="#10b981" />
+  <rect x="590" y="227" width="28" height="68" rx="7" fill="#38bdf8" />
+  <rect x="635" y="249" width="28" height="46" rx="7" fill="#f59e0b" />
+  <rect x="680" y="263" width="28" height="32" rx="7" fill="#f43f5e" />
+
+  <!-- Label Batang -->
+  <g fill="#94a3b8" font-family="Consolas, monospace" font-size="11" font-weight="700" text-anchor="middle">
+    <text x="559" y="316">N</text>
+    <text x="604" y="316">T</text>
+    <text x="649" y="316">R</text>
+    <text x="694" y="316">K</text>
+  </g>
+
+  <!-- Pill Fitur Bawah -->
+  <g font-family="Plus Jakarta Sans, Segoe UI, sans-serif" font-size="12.5" font-weight="600">
+    <rect x="56" y="325" width="102" height="34" rx="10" fill="#ffffff" fill-opacity="0.1" stroke="#ffffff" stroke-opacity="0.22" />
+    <text x="107" y="347" text-anchor="middle" fill="#f1f5f9">0–60 Bulan</text>
+
+    <rect x="170" y="325" width="146" height="34" rx="10" fill="#ffffff" fill-opacity="0.1" stroke="#ffffff" stroke-opacity="0.22" />
+    <text x="243" y="347" text-anchor="middle" fill="#f1f5f9">Database Terisolasi</text>
+
+    <rect x="328" y="325" width="142" height="34" rx="10" fill="#ffffff" fill-opacity="0.1" stroke="#ffffff" stroke-opacity="0.22" />
+    <text x="399" y="347" text-anchor="middle" fill="#f1f5f9">Stop / Play Lisensi</text>
+  </g>
+</svg>
